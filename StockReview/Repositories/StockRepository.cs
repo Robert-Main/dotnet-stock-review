@@ -21,12 +21,12 @@ namespace StockReview.Repositories
 
         public async Task<List<Stock>> GetStocksAsync()
         {
-            return await _context.Stocks.ToListAsync();
+            return await _context.Stocks.Include(s => s.Comments).ToListAsync();
         }
 
         public async Task<Stock?> GetStockAsync(int id)
         {
-            return await _context.Stocks.FindAsync(id);
+            return await _context.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<Stock?> GetStockWithCommentsAsync(int id)

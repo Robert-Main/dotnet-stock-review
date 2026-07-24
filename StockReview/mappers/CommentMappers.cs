@@ -1,12 +1,38 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using StockReview.Dtos.Comment;
+using StockReview.Models;
 
-namespace StockReview.mappers
+namespace StockReview.Mappers
 {
-    public class CommentMappers
+    public static class CommentMappers
     {
-        
+        public static CommentDto MapToCommentDto(Comment comment)
+        {
+            return new CommentDto
+            {
+                Id = comment.Id,
+                StockId = comment.StockId,
+                Title = comment.Title,
+                Content = comment.Content,
+                CreatedAt = comment.CreatedAt
+            };
+        }
+
+        public static Comment MapToCreateComment(CreateCommentDto createCommentDto)
+        {
+            return new Comment
+            {
+                StockId = createCommentDto.StockId,
+                Title = createCommentDto.Title,
+                Content = createCommentDto.Content,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
+        public static void MapToUpdateComment(UpdateCommentDto updateCommentDto, Comment comment)
+        {
+            comment.Title = updateCommentDto.Title;
+            comment.Content = updateCommentDto.Content;
+        }
     }
 }
