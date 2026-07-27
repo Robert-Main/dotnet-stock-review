@@ -11,10 +11,12 @@ namespace StockReview.Controllers
     public class CommentController : ControllerBase
     {
         private readonly ICommentRepository _commentRepository;
+        private readonly IStockRepository _stockRepository;
 
-        public CommentController(ICommentRepository commentRepository)
+        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository)
         {
             _commentRepository = commentRepository;
+            _stockRepository = stockRepository;
         }
 
         [HttpGet]
@@ -41,15 +43,25 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddComment([FromBody] CreateCommentDto createCommentDto)
+        [HttpPost("stock/{stockId}")]
+        public async Task<IActionResult> AddComment([FromRoute] int stockId, [FromBody] CreateCommentDto createCommentDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var comment = await _commentRepository.AddCommentAsync(createCommentDto);
+            var stock = await _stockRepository.GetStockAsync(stockId);
+            if (stock == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Stock not found"
+                });
+            }
+
+            var comment = await _commentRepository.AddCommentAsync(createCommentDto, stockId);
             return Ok(new
             {
                 success = true,

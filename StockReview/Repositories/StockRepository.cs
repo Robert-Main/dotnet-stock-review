@@ -68,5 +68,7 @@ namespace StockReview.Repositories
             await _context.SaveChangesAsync();
             return stock;
         }
+
+        
     }
 }

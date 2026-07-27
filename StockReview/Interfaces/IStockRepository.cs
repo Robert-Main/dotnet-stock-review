@@ -14,5 +14,6 @@ namespace StockReview.Interfaces
         Task<Stock> AddStockAsync(CreateStock createStockDto);
         Task<Stock?> UpdateStockAsync(int id, UpdateStock updateStockDto);
         Task<Stock?> DeleteStockAsync(int id);
+
     }
 }
