@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using StockReview.Dtos.Stock;
+using StockReview.Helpers;
 using StockReview.Interfaces;
 using StockReview.Mappers;
 
@@ -19,9 +20,9 @@ namespace StockReview.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetStocks()
+        public async Task<IActionResult> GetStocks([FromQuery] QueryObject query)
         {
-            var stocks = await _stockRepository.GetStocksAsync();
+            var stocks = await _stockRepository.GetAllStocksAsync(query);
             var stockDtos = stocks.Select(s => s.MapToStockDtos()).ToList();
 
             return Ok(new

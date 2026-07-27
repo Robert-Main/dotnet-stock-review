@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using StockReview.Dtos.Stock;
+using StockReview.Helpers;
 using StockReview.Models;
 
 namespace StockReview.Interfaces
 {
     public interface IStockRepository
     {
-        Task<List<Stock>> GetStocksAsync();
+        Task<List<Stock>> GetAllStocksAsync(QueryObject query);
         Task<Stock?> GetStockAsync(int id);
         Task<Stock?> GetStockWithCommentsAsync(int id);
         Task<bool> StockExistsAsync(int id);

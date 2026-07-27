@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using StockReview.Data;
 using StockReview.Dtos.Stock;
+using StockReview.Helpers;
 using StockReview.Interfaces;
 using StockReview.Mappers;
 using StockReview.Models;
@@ -19,9 +20,18 @@ namespace StockReview.Repositories
             _context = context;
         }
 
-        public async Task<List<Stock>> GetStocksAsync()
+        public async Task<List<Stock>> GetAllStocksAsync(QueryObject query)
         {
-            return await _context.Stocks.Include(s => s.Comments).ToListAsync();
+            var stocks = _context.Stocks.Include(s => s.Comments).AsQueryable();
+            if (!string.IsNullOrEmpty(query?.Symbol))
+            {
+                stocks = stocks.Where(s => s.Symbol.Contains(query.Symbol));
+            }
+            if (!string.IsNullOrEmpty(query?.CompanyName))
+            {
+                stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
+            }
+            return await stocks.ToListAsync();
         }
 
         public async Task<Stock?> GetStockAsync(int id)
@@ -69,6 +79,6 @@ namespace StockReview.Repositories
             return stock;
         }
 
-        
+
     }
 }
