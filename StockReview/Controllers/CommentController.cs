@@ -31,7 +31,7 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpGet("{stockId}")]
+        [HttpGet("{stockId:int}")]
         public async Task<IActionResult> GetCommentsByStockId(int stockId)
         {
             var comments = await _commentRepository.GetCommentsByStockIdAsync(stockId);
@@ -43,7 +43,7 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpPost("stock/{stockId}")]
+        [HttpPost("stock/{stockId:int}")]
         public async Task<IActionResult> AddComment([FromRoute] int stockId, [FromBody] CreateCommentDto createCommentDto)
         {
             if (!ModelState.IsValid)
@@ -70,9 +70,13 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateComment(int id, [FromBody] UpdateCommentDto updateCommentDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var comment = await _commentRepository.UpdateCommentAsync(id, updateCommentDto);
             if (comment == null)
             {
@@ -91,9 +95,14 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteComment(int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var comment = await _commentRepository.DeleteCommentAsync(id);
             if (comment == null)
             {

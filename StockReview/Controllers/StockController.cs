@@ -32,7 +32,7 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetStock(int id)
         {
             var stock = await _stockRepository.GetStockWithCommentsAsync(id);
@@ -56,6 +56,10 @@ namespace StockReview.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateStock([FromBody] CreateStock createStock)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var stock = createStock.MapToCreateStock();
             var created = await _stockRepository.AddStockAsync(createStock);
 
@@ -66,9 +70,13 @@ namespace StockReview.Controllers
             );
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateStock([FromRoute] int id, [FromBody] UpdateStock updateStockDto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var stock = await _stockRepository.UpdateStockAsync(id, updateStockDto);
             if (stock == null)
             {
@@ -87,9 +95,13 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteStock([FromRoute] int id)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
             var stock = await _stockRepository.DeleteStockAsync(id);
             if (stock == null)
             {
