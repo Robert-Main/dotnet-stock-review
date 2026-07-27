@@ -9,5 +9,9 @@ namespace StockReview.Helpers
     {
         public string? Symbol { get; set; }
         public string? CompanyName { get; set; }
+
+        public string? SortBy   { get; set; }
+        public string? SortOrder { get; set; }
+        public bool IsDecending {get; set; } = false;
     }
 }

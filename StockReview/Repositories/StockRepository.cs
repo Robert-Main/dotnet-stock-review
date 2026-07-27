@@ -31,6 +31,18 @@ namespace StockReview.Repositories
             {
                 stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
             }
+
+            if (!string.IsNullOrEmpty(query?.SortBy))
+            {
+                if (query.SortBy.ToLower() == "symbol")
+                {
+                    stocks = query.IsDecending ? stocks.OrderByDescending(s => s.Symbol) : stocks.OrderBy(s => s.Symbol);
+                }
+                else if (query.SortBy.ToLower() == "companyname")
+                {
+                    stocks = query.IsDecending ? stocks.OrderByDescending(s => s.CompanyName) : stocks.OrderBy(s => s.CompanyName);
+                }
+            }
             return await stocks.ToListAsync();
         }
 
