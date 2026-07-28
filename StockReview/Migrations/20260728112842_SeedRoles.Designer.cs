@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StockReview.Data;
 
@@ -11,9 +12,11 @@ using StockReview.Data;
 namespace PokemonReview.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260728112842_SeedRoles")]
+    partial class SeedRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -275,7 +278,7 @@ namespace PokemonReview.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Divided")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18.2)");
 
                     b.Property<string>("Industry")
                         .HasColumnType("nvarchar(max)");
@@ -287,7 +290,7 @@ namespace PokemonReview.Migrations
                         .HasColumnType("bigint");
 
                     b.Property<decimal>("Purchase")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18.2)");
 
                     b.Property<string>("Symbol")
                         .HasColumnType("nvarchar(max)");
