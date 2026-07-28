@@ -48,9 +48,9 @@ namespace StockReview.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto, int stockId)
+        public async Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto)
         {
-            var comment = CommentMappers.MapToCreateComment(createCommentDto, stockId);
+            var comment = CommentMappers.MapToCreateComment(createCommentDto);
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
             return comment;

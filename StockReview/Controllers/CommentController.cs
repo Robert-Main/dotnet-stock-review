@@ -43,15 +43,25 @@ namespace StockReview.Controllers
             });
         }
 
-        [HttpPost("stock/{stockId:int}")]
-        public async Task<IActionResult> AddComment([FromRoute] int stockId, [FromBody] CreateCommentDto createCommentDto)
+        [HttpPost]
+        public async Task<IActionResult> AddComment([FromBody] CreateCommentDto createCommentDto)
         {
+            if (createCommentDto == null)
+            {
+                return BadRequest(new { success = false, message = "Request body is required." });
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var stock = await _stockRepository.GetStockAsync(stockId);
+            if (createCommentDto.StockId == null)
+            {
+                return BadRequest(new { success = false, message = "StockId is required." });
+            }
+
+            var stock = await _stockRepository.GetStockAsync(createCommentDto.StockId.Value);
             if (stock == null)
             {
                 return NotFound(new
@@ -61,7 +71,7 @@ namespace StockReview.Controllers
                 });
             }
 
-            var comment = await _commentRepository.AddCommentAsync(createCommentDto, stockId);
+            var comment = await _commentRepository.AddCommentAsync(createCommentDto);
             return Ok(new
             {
                 success = true,
@@ -98,11 +108,6 @@ namespace StockReview.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteComment(int id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var comment = await _commentRepository.DeleteCommentAsync(id);
             if (comment == null)
             {

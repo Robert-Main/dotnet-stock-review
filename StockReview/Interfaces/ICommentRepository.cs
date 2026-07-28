@@ -9,11 +9,10 @@ namespace StockReview.Interfaces
 {
     public interface ICommentRepository
     {
-        public Task<List<CommentDto>> GetAllCommentsAsync();
-        public Task<List<CommentDto>> GetCommentsByStockIdAsync(int stockId);
-        public Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto, int stockId);
-        public Task<Comment?> UpdateCommentAsync(int id, UpdateCommentDto updateCommentDto);
-        public Task<Comment?> DeleteCommentAsync(int id);
-
+        Task<List<CommentDto>> GetAllCommentsAsync();
+        Task<List<CommentDto>> GetCommentsByStockIdAsync(int stockId);
+        Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto);
+        Task<Comment?> UpdateCommentAsync(int id, UpdateCommentDto updateCommentDto);
+        Task<Comment?> DeleteCommentAsync(int id);
     }
 }

@@ -23,27 +23,39 @@ namespace StockReview.Repositories
         public async Task<List<Stock>> GetAllStocksAsync(QueryObject query)
         {
             var stocks = _context.Stocks.Include(s => s.Comments).AsQueryable();
-            if (!string.IsNullOrEmpty(query?.Symbol))
+
+            var symbol = query.Symbol;
+            if (!string.IsNullOrEmpty(symbol))
             {
-                stocks = stocks.Where(s => s.Symbol.Contains(query.Symbol));
-            }
-            if (!string.IsNullOrEmpty(query?.CompanyName))
-            {
-                stocks = stocks.Where(s => s.CompanyName.Contains(query.CompanyName));
+                stocks = stocks.Where(s => s.Symbol != null && s.Symbol.Contains(symbol));
             }
 
-            if (!string.IsNullOrEmpty(query?.SortBy))
+            var companyName = query.CompanyName;
+            if (!string.IsNullOrEmpty(companyName))
             {
-                if (query.SortBy.ToLower() == "symbol")
+                stocks = stocks.Where(s => s.CompanyName != null && s.CompanyName.Contains(companyName));
+            }
+
+            if (!string.IsNullOrEmpty(query.SortBy))
+            {
+                if (query.SortBy.Equals("symbol", StringComparison.OrdinalIgnoreCase))
                 {
-                    stocks = query.IsDecending ? stocks.OrderByDescending(s => s.Symbol) : stocks.OrderBy(s => s.Symbol);
+                    stocks = query.IsDescending
+                        ? stocks.OrderByDescending(s => s.Symbol)
+                        : stocks.OrderBy(s => s.Symbol);
                 }
-                else if (query.SortBy.ToLower() == "companyname")
+                else if (query.SortBy.Equals("companyname", StringComparison.OrdinalIgnoreCase))
                 {
-                    stocks = query.IsDecending ? stocks.OrderByDescending(s => s.CompanyName) : stocks.OrderBy(s => s.CompanyName);
+                    stocks = query.IsDescending
+                        ? stocks.OrderByDescending(s => s.CompanyName)
+                        : stocks.OrderBy(s => s.CompanyName);
                 }
             }
-            return await stocks.ToListAsync();
+
+            return await stocks
+                .Skip(query.Skip)
+                .Take(query.Take)
+                .ToListAsync();
         }
 
         public async Task<Stock?> GetStockAsync(int id)
@@ -90,7 +102,5 @@ namespace StockReview.Repositories
             await _context.SaveChangesAsync();
             return stock;
         }
-
-
     }
 }

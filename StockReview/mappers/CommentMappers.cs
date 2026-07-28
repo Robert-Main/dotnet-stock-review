@@ -18,11 +18,11 @@ namespace StockReview.Mappers
             };
         }
 
-        public static Comment MapToCreateComment(CreateCommentDto createCommentDto, int stockId)
+        public static Comment MapToCreateComment(CreateCommentDto createCommentDto)
         {
             return new Comment
             {
-                StockId = stockId,
+                StockId = createCommentDto.StockId,
                 Title = createCommentDto.Title,
                 Content = createCommentDto.Content,
             };

@@ -13,7 +13,7 @@ namespace PokemonReview.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260701085704_init")]
-    partial class init
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
