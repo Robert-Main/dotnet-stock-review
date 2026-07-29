@@ -5,6 +5,7 @@ using StockReview.Data;
 using StockReview.Interfaces;
 using StockReview.Models;
 using StockReview.Repositories;
+using StockReview.Services;
 
 DotNetEnv.Env.Load();
 
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
