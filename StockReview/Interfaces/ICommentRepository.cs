@@ -11,7 +11,8 @@ namespace StockReview.Interfaces
     {
         Task<List<CommentDto>> GetAllCommentsAsync();
         Task<List<CommentDto>> GetCommentsByStockIdAsync(int stockId);
-        Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto);
+        Task<CommentDto?> GetCommentByIdAsync(int id);   // ✅ fixed
+        Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto, string appUserId);
         Task<Comment?> UpdateCommentAsync(int id, UpdateCommentDto updateCommentDto);
         Task<Comment?> DeleteCommentAsync(int id);
     }

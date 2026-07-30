@@ -15,5 +15,7 @@ namespace StockReview.Models
         public string? Content { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public Stock? Stock { get; set; }
+        public string? AppUserId { get; set; }
+        public AppUser? AppUser { get; set; }
     }
 }

@@ -1,8 +1,11 @@
 using System.Threading.Tasks;
+using api.Extensions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StockReview.Dtos.Comment;
 using StockReview.Interfaces;
 using StockReview.Mappers;
+using StockReview.Models;
 
 namespace StockReview.Controllers
 {
@@ -12,11 +15,13 @@ namespace StockReview.Controllers
     {
         private readonly ICommentRepository _commentRepository;
         private readonly IStockRepository _stockRepository;
+        private readonly UserManager<AppUser> _userManager;
 
-        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository)
+        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository, UserManager<AppUser> userManager)
         {
             _commentRepository = commentRepository;
             _stockRepository = stockRepository;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -30,8 +35,17 @@ namespace StockReview.Controllers
                 data = comments
             });
         }
+        [HttpGet("comment/{id:int}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var comment = await _commentRepository.GetCommentByIdAsync(id);
+            if (comment == null)
+                return NotFound();
 
-        [HttpGet("{stockId:int}")]
+            return Ok(comment);
+        }
+
+        [HttpGet("stock/{stockId:int}")]
         public async Task<IActionResult> GetCommentsByStockId(int stockId)
         {
             var comments = await _commentRepository.GetCommentsByStockIdAsync(stockId);
@@ -70,8 +84,20 @@ namespace StockReview.Controllers
                     message = "Stock not found"
                 });
             }
+            var username = User.GetUserName();
+            if (string.IsNullOrEmpty(username))
+            {
+                return Unauthorized(new { success = false, message = "Authenticated user is required." });
+            }
 
-            var comment = await _commentRepository.AddCommentAsync(createCommentDto);
+            var appUser = await _userManager.FindByNameAsync(username);
+            if (appUser == null)
+            {
+                return Unauthorized(new { success = false, message = "Authenticated user not found." });
+            }
+
+            var comment = await _commentRepository.AddCommentAsync(createCommentDto, appUser.Id);
+            comment.AppUser = appUser;
             return Ok(new
             {
                 success = true,

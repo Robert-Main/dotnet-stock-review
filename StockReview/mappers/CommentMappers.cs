@@ -14,7 +14,8 @@ namespace StockReview.Mappers
                 StockId = comment.StockId,
                 Title = comment.Title,
                 Content = comment.Content,
-                CreatedAt = comment.CreatedAt
+                CreatedAt = comment.CreatedAt,
+                CreatedBy = comment.AppUser?.UserName
             };
         }
 

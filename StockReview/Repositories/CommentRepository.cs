@@ -21,21 +21,22 @@ namespace StockReview.Repositories
 
         public Task<List<CommentDto>> GetAllCommentsAsync()
         {
-            return _context.Comments
+            return _context.Comments.Include(a => a.AppUser)
                 .Select(c => new CommentDto
                 {
                     Id = c.Id,
                     StockId = c.StockId,
                     Title = c.Title,
                     Content = c.Content,
-                    CreatedAt = c.CreatedAt
+                    CreatedAt = c.CreatedAt,
+                    CreatedBy = c.AppUser != null ? c.AppUser.UserName : null
                 })
                 .ToListAsync();
         }
 
         public Task<List<CommentDto>> GetCommentsByStockIdAsync(int stockId)
         {
-            return _context.Comments
+            return _context.Comments.Include(a => a.AppUser)
                 .Where(c => c.StockId == stockId)
                 .Select(c => new CommentDto
                 {
@@ -43,14 +44,32 @@ namespace StockReview.Repositories
                     StockId = c.StockId,
                     Title = c.Title,
                     Content = c.Content,
-                    CreatedAt = c.CreatedAt
+                    CreatedAt = c.CreatedAt,
+                    CreatedBy = c.AppUser != null ? c.AppUser.UserName : null
                 })
                 .ToListAsync();
         }
 
-        public async Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto)
+        public Task<CommentDto?> GetCommentByIdAsync(int id)
+        {
+            return _context.Comments.Include(c => c.AppUser)
+                .Where(c => c.Id == id)
+                .Select(c => new CommentDto
+                {
+                    Id = c.Id,
+                    StockId = c.StockId,
+                    Title = c.Title,
+                    Content = c.Content,
+                    CreatedAt = c.CreatedAt,
+                    CreatedBy = c.AppUser != null ? c.AppUser.UserName : null
+                })
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto, string appUserId)
         {
             var comment = CommentMappers.MapToCreateComment(createCommentDto);
+            comment.AppUserId = appUserId;
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
             return comment;
