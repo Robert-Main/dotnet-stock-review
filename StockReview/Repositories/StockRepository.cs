@@ -63,6 +63,11 @@ namespace StockReview.Repositories
             return await _context.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.Id == id);
         }
 
+        public async Task<Stock?> GetStockBySymbolAsync(string symbol)
+        {
+            return await _context.Stocks.FirstOrDefaultAsync(s => s.Symbol == symbol);
+        }
+
         public async Task<Stock?> GetStockWithCommentsAsync(int id)
         {
             return await _context.Stocks

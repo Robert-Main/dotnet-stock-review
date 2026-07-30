@@ -10,6 +10,7 @@ namespace StockReview.Interfaces
     {
         Task<List<Stock>> GetAllStocksAsync(QueryObject query);
         Task<Stock?> GetStockAsync(int id);
+        Task<Stock?> GetStockBySymbolAsync(string symbol);
         Task<Stock?> GetStockWithCommentsAsync(int id);
         Task<bool> StockExistsAsync(int id);
         Task<Stock> AddStockAsync(CreateStock createStockDto);
