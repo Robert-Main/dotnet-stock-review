@@ -22,7 +22,10 @@ namespace StockReview.Repositories
 
         public async Task<List<Stock>> GetAllStocksAsync(QueryObject query)
         {
-            var stocks = _context.Stocks.Include(s => s.Comments).AsQueryable();
+            var stocks = _context.Stocks
+                .Include(s => s.Comments)
+                    .ThenInclude(c => c.AppUser)
+                .AsQueryable();
 
             var symbol = query.Symbol;
             if (!string.IsNullOrEmpty(symbol))
@@ -60,7 +63,10 @@ namespace StockReview.Repositories
 
         public async Task<Stock?> GetStockAsync(int id)
         {
-            return await _context.Stocks.Include(s => s.Comments).FirstOrDefaultAsync(s => s.Id == id);
+            return await _context.Stocks
+                .Include(s => s.Comments)
+                    .ThenInclude(c => c.AppUser)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
 
         public async Task<Stock?> GetStockBySymbolAsync(string symbol)
@@ -72,6 +78,7 @@ namespace StockReview.Repositories
         {
             return await _context.Stocks
                 .Include(s => s.Comments)
+                    .ThenInclude(c => c.AppUser)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 

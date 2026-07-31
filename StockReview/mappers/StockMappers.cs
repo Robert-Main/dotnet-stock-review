@@ -1,3 +1,4 @@
+using api.Dtos.Stock;
 using StockReview.Dtos.Stock;
 using StockReview.Models;
 
@@ -45,6 +46,18 @@ namespace StockReview.Mappers
             stock.MarketCap = updateStock.MarketCap;
 
             return stock;
+        }
+         public static Stock ToStockFromFMP(this FMPStock fmpStock)
+        {
+            return new Stock
+            {
+                Symbol = fmpStock.symbol,
+                CompanyName = fmpStock.companyName,
+                Purchase = (decimal)fmpStock.price,
+                LastDiv = (decimal)fmpStock.lastDiv,
+                Industry = fmpStock.industry,
+                MarketCap = fmpStock.mktCap
+            };
         }
     }
 }

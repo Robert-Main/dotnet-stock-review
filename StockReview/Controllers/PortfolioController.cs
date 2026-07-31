@@ -6,9 +6,11 @@ using api.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using StockReview.Dtos.Stock;
 using StockReview.Interfaces;
 using StockReview.Models;
 using StockReview.Repositories;
+using StockReview.Services;
 
 namespace StockReview.Controllers
 {
@@ -20,12 +22,14 @@ namespace StockReview.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly IStockRepository _stockRepository;
         private readonly IPortfolioInterface _portfolioInterface;
+        private readonly IFMPInterface _iFMPService;
 
-        public PortfolioController(UserManager<AppUser> userManager, IStockRepository stockRepository, IPortfolioInterface portfolioInterface)
+        public PortfolioController(UserManager<AppUser> userManager, IStockRepository stockRepository, IPortfolioInterface portfolioInterface, IFMPInterface iFMPService)
         {
             _userManager = userManager;
             _stockRepository = stockRepository;
             _portfolioInterface = portfolioInterface;
+            _iFMPService = iFMPService;
         }
 
         [HttpGet]
@@ -43,8 +47,8 @@ namespace StockReview.Controllers
             return Ok(portfolio);
         }
 
-        [HttpPost("add")]
-        public async Task<IActionResult> AddToPortfolio(string symbol)
+        [HttpPost("add/{symbol:alpha}")]
+        public async Task<IActionResult> AddToPortfolio([FromRoute] string symbol)
         {
             var username = User.GetUserName();
             var user = await _userManager.FindByNameAsync(username);
@@ -54,33 +58,53 @@ namespace StockReview.Controllers
                 return Unauthorized();
             }
 
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                return BadRequest("Symbol is required.");
+            }
+
             var stock = await _stockRepository.GetStockBySymbolAsync(symbol);
             if (stock == null)
             {
-                return NotFound($"Stock with symbol {symbol} not found.");
-            }
+                stock = await _iFMPService.FindStockBySymbolAsync(symbol);
+                if (stock == null)
+                {
+                    return BadRequest("Stock does not exist.");
+                }
 
-            var userPortfolio = await _portfolioInterface.GetUserPortfolioAsync(user);
+                var createStock = new StockReview.Dtos.Stock.CreateStock
+                {
+                    Symbol = stock.Symbol,
+                    CompanyName = stock.CompanyName,
+                    Purchase = stock.Purchase,
+                    Divided = stock.Divided,
+                    LastDiv = stock.LastDiv,
+                    Industry = stock.Industry,
+                    MarketCap = stock.MarketCap,
+                    Sector = "Unknown"
+                };
+
+                stock = await _stockRepository.AddStockAsync(createStock);
+            }
 
             var portfolioModel = new Portfolio
             {
                 StockId = stock.Id,
-                AppUserId= user.Id
+                AppUserId = user.Id
             };
 
-            await _portfolioInterface.CreatePortfolioAsync(portfolioModel);
-            if(portfolioModel == null)
+            var createdPortfolio = await _portfolioInterface.CreatePortfolioAsync(portfolioModel);
+            if (createdPortfolio == null)
             {
-                return StatusCode(500,"Could nor create");
-            };
-            return Ok(
-                new
-                {
-                    success=true,
-                    message= "Portfolio craeted succefully",
-                    portfolio = portfolioModel
-                }
-            );
+                return StatusCode(500, "Could not create portfolio item.");
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Portfolio item created successfully",
+                portfolio = createdPortfolio
+            });
         }
 
         [HttpDelete("")]

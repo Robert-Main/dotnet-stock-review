@@ -8,7 +8,6 @@ namespace StockReview.Dtos.Comment
 {
     public class CreateCommentDto
     {
-        [Required]
         public int? StockId { get; set; }
 
         [Required]

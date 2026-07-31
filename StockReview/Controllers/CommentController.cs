@@ -3,9 +3,11 @@ using api.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StockReview.Dtos.Comment;
+using StockReview.Dtos.Stock;
 using StockReview.Interfaces;
 using StockReview.Mappers;
 using StockReview.Models;
+using StockReview.Services;
 
 namespace StockReview.Controllers
 {
@@ -16,12 +18,14 @@ namespace StockReview.Controllers
         private readonly ICommentRepository _commentRepository;
         private readonly IStockRepository _stockRepository;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IFMPInterface _iFMPService;
 
-        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository, UserManager<AppUser> userManager)
+        public CommentController(ICommentRepository commentRepository, IStockRepository stockRepository, UserManager<AppUser> userManager, IFMPInterface iFMPService)
         {
             _commentRepository = commentRepository;
             _stockRepository = stockRepository;
             _userManager = userManager;
+            _iFMPService = iFMPService;
         }
 
         [HttpGet]
@@ -42,7 +46,12 @@ namespace StockReview.Controllers
             if (comment == null)
                 return NotFound();
 
-            return Ok(comment);
+            return Ok(new
+            {
+                success=true,
+                message="comment retrived succeefully",
+                comment
+            });
         }
 
         [HttpGet("stock/{stockId:int}")]
@@ -58,7 +67,8 @@ namespace StockReview.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddComment([FromBody] CreateCommentDto createCommentDto)
+        [Route("{symbol:alpha}")]
+        public async Task<IActionResult> Create([FromRoute] string symbol, [FromBody] CreateCommentDto createCommentDto)
         {
             if (createCommentDto == null)
             {
@@ -70,20 +80,40 @@ namespace StockReview.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (createCommentDto.StockId == null)
+            if (string.IsNullOrWhiteSpace(symbol))
             {
-                return BadRequest(new { success = false, message = "StockId is required." });
+                return BadRequest(new { success = false, message = "Stock symbol is required." });
             }
 
-            var stock = await _stockRepository.GetStockAsync(createCommentDto.StockId.Value);
+            var stock = await _stockRepository.GetStockBySymbolAsync(symbol);
             if (stock == null)
             {
-                return NotFound(new
+                var remoteStock = await _iFMPService.FindStockBySymbolAsync(symbol);
+                if (remoteStock == null)
                 {
-                    success = false,
-                    message = "Stock not found"
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Stock not found"
+                    });
+                }
+
+                stock = await _stockRepository.AddStockAsync(new CreateStock
+                {
+                    Symbol = remoteStock.Symbol,
+                    CompanyName = remoteStock.CompanyName,
+                    Purchase = remoteStock.Purchase,
+                    Divided = remoteStock.Divided,
+                    LastDiv = remoteStock.LastDiv,
+                    Industry = remoteStock.Industry,
+                    MarketCap = remoteStock.MarketCap,
+                    Sector = "Unknown"
                 });
+                
             }
+
+            createCommentDto.StockId = stock.Id;
+
             var username = User.GetUserName();
             if (string.IsNullOrEmpty(username))
             {
