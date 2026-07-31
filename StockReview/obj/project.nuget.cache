@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "R2XvWJcSjJ0=",
+  "dgSpecHash": "FHtfHosRm7Y=",
   "success": true,
-  "projectFilePath": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\PokemonReview\\StockReview\\PokemonReview.csproj",
+  "projectFilePath": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\StockReview\\StockReview\\PokemonReview.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\hp\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\hp\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",

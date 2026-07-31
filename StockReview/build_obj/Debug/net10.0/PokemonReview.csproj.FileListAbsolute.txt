@@ -1,9 +1,0 @@
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.csproj.AssemblyReference.cache
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\rpswa.dswa.cache.json
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.AssemblyInfoInputs.cache
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.AssemblyInfo.cs
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.csproj.CoreCompileInputs.cache
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\hp\Documents\work\mine\ASP.net\donet-api\PokemonReview\StockReview\build_obj\Debug\net10.0\PokemonReview.sourcelink.json

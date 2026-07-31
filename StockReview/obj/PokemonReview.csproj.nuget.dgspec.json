@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\PokemonReview\\StockReview\\PokemonReview.csproj": {}
+    "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\StockReview\\StockReview\\PokemonReview.csproj": {}
   },
   "projects": {
-    "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\PokemonReview\\StockReview\\PokemonReview.csproj": {
+    "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\StockReview\\StockReview\\PokemonReview.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\PokemonReview\\StockReview\\PokemonReview.csproj",
+        "projectUniqueName": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\StockReview\\StockReview\\PokemonReview.csproj",
         "projectName": "PokemonReview",
-        "projectPath": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\PokemonReview\\StockReview\\PokemonReview.csproj",
+        "projectPath": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\StockReview\\StockReview\\PokemonReview.csproj",
         "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\PokemonReview\\StockReview\\obj\\",
+        "outputPath": "C:\\Users\\hp\\Documents\\work\\mine\\ASP.net\\donet-api\\StockReview\\StockReview\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config"
