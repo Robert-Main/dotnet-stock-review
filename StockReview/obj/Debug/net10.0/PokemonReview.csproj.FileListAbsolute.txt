@@ -165,3 +165,11 @@ C:\Users\hp\Documents\work\mine\ASP.net\donet-api\StockReview\StockReview\obj\De
 C:\Users\hp\Documents\work\mine\ASP.net\donet-api\StockReview\StockReview\obj\Debug\net10.0\PokemonReview.pdb
 C:\Users\hp\Documents\work\mine\ASP.net\donet-api\StockReview\StockReview\obj\Debug\net10.0\PokemonReview.genruntimeconfig.cache
 C:\Users\hp\Documents\work\mine\ASP.net\donet-api\StockReview\StockReview\obj\Debug\net10.0\ref\PokemonReview.dll
+C:\Users\hp\AppData\Local\Temp\stockreview-build\appsettings.Development.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build\appsettings.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.staticwebassets.endpoints.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.exe
+C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.deps.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.runtimeconfig.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.dll
+C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.pdb
