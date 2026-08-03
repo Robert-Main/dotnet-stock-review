@@ -22,8 +22,10 @@ import type { CommentDto, StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency, formatDateTime } from "@/lib/format";
 import { Button, Card, EmptyState, Input, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
+import { useAuth } from "@/context/AuthContext";
 
 export default function StockDetailPage() {
+  const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -50,13 +52,6 @@ export default function StockDetailPage() {
     try {
       const res = await stockApi.get(id);
       setStock(res.stock);
-      const symbol = res.stock.symbol;
-      if (symbol) {
-        const portfolio = await portfolioApi.list();
-        setInPortfolio(
-          portfolio.some((s) => s.symbol?.toUpperCase() === symbol.toUpperCase())
-        );
-      }
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Could not load this stock."
@@ -65,6 +60,18 @@ export default function StockDetailPage() {
       setLoading(false);
     }
   }, [id]);
+
+  // Portfolio membership is non-critical — a failure must never blank the page.
+  const loadPortfolio = useCallback(async (symbol: string) => {
+    try {
+      const portfolio = await portfolioApi.list();
+      setInPortfolio(
+        portfolio.some((s) => s.symbol?.toUpperCase() === symbol.toUpperCase())
+      );
+    } catch {
+      // Ignore: portfolio status is a convenience, not the page's core data.
+    }
+  }, []);
 
   const loadComments = useCallback(async () => {
     try {
@@ -80,6 +87,14 @@ export default function StockDetailPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadStock();
   }, [loadStock]);
+
+  // Fetch portfolio membership once the stock (and its symbol) is available.
+  useEffect(() => {
+    if (!stock?.symbol) return;
+    // Async data fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPortfolio(stock.symbol);
+  }, [stock?.symbol, loadPortfolio]);
 
   useEffect(() => {
     // Async data fetch on mount.
@@ -104,6 +119,12 @@ export default function StockDetailPage() {
       setPortfolioBusy(false);
     }
   };
+
+  // The API reports comment author usernames (createdBy); the backend does not
+  // enforce ownership on edit/delete, so gate the controls in the UI to the
+  // comment owner to match intent.
+  const canManage = (comment: CommentDto) =>
+    !!comment.createdBy && comment.createdBy === user?.userName;
 
   const postComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,23 +356,25 @@ export default function StockDetailPage() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => startEdit(c)}
-                            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => deleteComment(c.id!)}
-                            disabled={deletingId === c.id}
-                            className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        {canManage(c) && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => startEdit(c)}
+                              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                              title="Edit"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                            <button
+                              onClick={() => deleteComment(c.id!)}
+                              disabled={deletingId === c.id}
+                              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <p className="mt-3 text-sm leading-relaxed text-zinc-300">
                         {c.content}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowDown,
@@ -37,6 +37,9 @@ export default function DashboardPage() {
   const [busySymbols, setBusySymbols] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<number | null>(null);
 
+  // Monotonic sequence so stale/aborted requests never clobber newer state.
+  const fetchSeq = useRef(0);
+
   // Debounce search input; reset to page 1 when the query changes.
   useEffect(() => {
     const t = setTimeout(() => {
@@ -48,14 +51,14 @@ export default function DashboardPage() {
 
   const fetchStocks = useCallback(
     async (signal?: AbortSignal) => {
+      const seq = ++fetchSeq.current;
       setLoading(true);
       setError(null);
       try {
-        // NOTE: the API applies Symbol and CompanyName filters with AND
-        // semantics, so pass only one of them for a combined search box.
         const res = await stockApi.list(
           {
             symbol: debouncedSearch || undefined,
+            companyName: debouncedSearch || undefined,
             sortBy,
             isDescending,
             pageNumber: page,
@@ -63,14 +66,17 @@ export default function DashboardPage() {
           },
           signal
         );
+        if (seq !== fetchSeq.current) return; // superseded by a newer request
         setStocks(res.stocks ?? []);
         setHasMore((res.stocks ?? []).length === PAGE_SIZE);
       } catch (err) {
+        if (seq !== fetchSeq.current) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
         setError(err instanceof ApiError ? err.message : "Failed to load stocks.");
         setStocks([]);
       } finally {
-        setLoading(false);
+        // Only the newest request may clear the spinner.
+        if (seq === fetchSeq.current) setLoading(false);
       }
     },
     [debouncedSearch, sortBy, isDescending, page]

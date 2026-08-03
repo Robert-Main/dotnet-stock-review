@@ -57,12 +57,14 @@ export function setStoredUser(user: AuthResponse["user"] | null): void {
 }
 
 function extractMessage(body: unknown, fallback: string): string {
+  // The API may return a plain JSON string body, e.g. BadRequest("Stock does
+  // not exist.") — surface it instead of the generic fallback.
+  if (typeof body === "string" && body.length > 0) return body;
   if (!body || typeof body !== "object") return fallback;
   const b = body as Record<string, unknown>;
   if (typeof b.Message === "string" && b.Message.length > 0) return b.Message;
   if (typeof b.message === "string" && b.message.length > 0) return b.message;
   if (typeof b.title === "string" && b.title.length > 0) return b.title;
-  if (typeof b === "string") return b;
   return fallback;
 }
 

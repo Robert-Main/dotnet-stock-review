@@ -173,3 +173,11 @@ C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.deps.json
 C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.runtimeconfig.json
 C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.dll
 C:\Users\hp\AppData\Local\Temp\stockreview-build\PokemonReview.pdb
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\appsettings.Development.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\appsettings.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\PokemonReview.staticwebassets.endpoints.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\PokemonReview.exe
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\PokemonReview.deps.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\PokemonReview.runtimeconfig.json
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\PokemonReview.dll
+C:\Users\hp\AppData\Local\Temp\stockreview-build2\PokemonReview.pdb
