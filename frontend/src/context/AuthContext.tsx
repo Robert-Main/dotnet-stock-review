@@ -10,12 +10,12 @@ import {
   type ReactNode,
 } from "react";
 import {
-  authApi,
   getStoredUser,
   getToken,
   setStoredUser,
   setToken,
 } from "@/lib/api";
+import { authApi } from "@/services/authService";
 import type { AuthUser } from "@/lib/types";
 
 interface AuthContextValue {

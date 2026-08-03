@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using StockReview.Data;
@@ -14,6 +15,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+);
+// Disable the framework's automatic 400 (ProblemDetails {title,status,errors,
+// traceId}) so ModelState validation errors flow through ApiResponse and every
+// error body is the consistent { success, message, errors? } shape. Controllers
+// already check ModelState.IsValid explicitly.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+    options.SuppressModelStateInvalidFilter = true
 );
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

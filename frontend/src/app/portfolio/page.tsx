@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { BarChart3, Plus, Trash2 } from "lucide-react";
-import { portfolioApi, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { portfolioApi } from "@/services/portfolioService";
 import type { StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";

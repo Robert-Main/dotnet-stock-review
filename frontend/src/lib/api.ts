@@ -1,18 +1,11 @@
 import type {
+  ApiErrorResponse,
   AuthResponse,
-  CommentListResponse,
-  CommentSingleResponse,
-  CreateCommentPayload,
-  CreateStockPayload,
-  MessageResponse,
-  StockDetailResponse,
-  StockDto,
-  StockListQuery,
-  StockListResponse,
-  UpdateStockPayload,
 } from "./types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5276";
+// Single source of truth for the API origin. Route-specific services (see
+// src/services/*) build on `request()` and never repeat this base.
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5276";
 
 const TOKEN_KEY = "stockreview_token";
 const USER_KEY = "stockreview_user";
@@ -20,12 +13,20 @@ const USER_KEY = "stockreview_user";
 export class ApiError extends Error {
   status: number;
   details?: unknown;
+  /** Structured { field: string[] } or string[] errors from the API, if any. */
+  errors?: ApiErrorResponse["errors"];
 
-  constructor(message: string, status: number, details?: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    details?: unknown,
+    errors?: ApiErrorResponse["errors"]
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.details = details;
+    this.errors = errors;
   }
 }
 
@@ -56,19 +57,30 @@ export function setStoredUser(user: AuthResponse["user"] | null): void {
   else localStorage.removeItem(USER_KEY);
 }
 
+// Every controller now returns { success: false, message, errors? } via
+// ApiResponse. `message` is the canonical source; the fallbacks below only
+// exist for framework-level edge cases (bare strings, ProblemDetails).
 function extractMessage(body: unknown, fallback: string): string {
-  // The API may return a plain JSON string body, e.g. BadRequest("Stock does
-  // not exist.") — surface it instead of the generic fallback.
   if (typeof body === "string" && body.length > 0) return body;
   if (!body || typeof body !== "object") return fallback;
   const b = body as Record<string, unknown>;
-  if (typeof b.Message === "string" && b.Message.length > 0) return b.Message;
   if (typeof b.message === "string" && b.message.length > 0) return b.message;
+  if (typeof b.Message === "string" && b.Message.length > 0) return b.Message;
   if (typeof b.title === "string" && b.title.length > 0) return b.title;
   return fallback;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+/**
+ * Core fetch wrapper: attaches the JWT, handles the standardized
+ * { success, message, errors? } error envelope, and broadcasts a
+ * "stockreview:unauthorized" event when the session expires.
+ *
+ * @param path Absolute API path (e.g. "/api/stock") — never the full URL.
+ */
+export async function request<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -78,7 +90,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, { ...options, headers });
+    res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
   } catch {
     throw new ApiError(
       "Could not reach the API. Make sure the .NET backend is running.",
@@ -106,87 +118,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!res.ok) {
+    const errorBody = (body as ApiErrorResponse | undefined) ?? null;
     throw new ApiError(
       extractMessage(body, `Request failed (${res.status})`),
       res.status,
-      body
+      body,
+      errorBody?.errors
     );
   }
 
   return body as T;
 }
-
-export const authApi = {
-  register: (username: string, email: string, password: string) =>
-    request<AuthResponse>("/api/account/register", {
-      method: "POST",
-      body: JSON.stringify({ username, email, password }),
-    }),
-  login: (email: string, password: string) =>
-    request<AuthResponse>("/api/account/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    }),
-};
-
-export const stockApi = {
-  list: (query: StockListQuery = {}, signal?: AbortSignal) => {
-    const params = new URLSearchParams();
-    if (query.symbol) params.set("symbol", query.symbol);
-    if (query.companyName) params.set("companyName", query.companyName);
-    if (query.sortBy) params.set("sortBy", query.sortBy);
-    if (query.isDescending !== undefined)
-      params.set("isDescending", String(query.isDescending));
-    if (query.pageNumber) params.set("pageNumber", String(query.pageNumber));
-    if (query.pageSize) params.set("pageSize", String(query.pageSize));
-    const qs = params.toString();
-    return request<StockListResponse>(`/api/stock${qs ? `?${qs}` : ""}`, {
-      signal,
-    });
-  },
-  get: (id: number) =>
-    request<StockDetailResponse>(`/api/stock/${id}`),
-  create: (payload: CreateStockPayload) =>
-    request<StockDto>("/api/stock", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  update: (id: number, payload: UpdateStockPayload) =>
-    request<StockDetailResponse>(`/api/stock/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    }),
-  remove: (id: number) =>
-    request<MessageResponse>(`/api/stock/${id}`, { method: "DELETE" }),
-};
-
-export const commentApi = {
-  forStock: (stockId: number) =>
-    request<CommentListResponse>(`/api/comment/stock/${stockId}`),
-  all: () => request<CommentListResponse>("/api/comment"),
-  create: (symbol: string, payload: CreateCommentPayload) =>
-    request<CommentSingleResponse>(`/api/comment/${symbol}`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }),
-  update: (id: number, payload: CreateCommentPayload) =>
-    request<CommentSingleResponse>(`/api/comment/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    }),
-  remove: (id: number) =>
-    request<CommentSingleResponse>(`/api/comment/${id}`, { method: "DELETE" }),
-};
-
-export const portfolioApi = {
-  list: () => request<StockDto[]>("/api/portfolio"),
-  add: (symbol: string) =>
-    request<MessageResponse>(`/api/portfolio/add/${encodeURIComponent(symbol)}`, {
-      method: "POST",
-    }),
-  remove: (symbol: string) =>
-    request<MessageResponse>(
-      `/api/portfolio?symbol=${encodeURIComponent(symbol)}`,
-      { method: "DELETE" }
-    ),
-};

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { stockApi, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { stockApi } from "@/services/stockService";
 import { Button, Card, Input } from "@/components/ui";
 
 interface StockFormProps {
@@ -44,6 +45,17 @@ export default function StockForm({ mode, initial }: StockFormProps) {
 
     const num = (s: string) => Number(s);
     const symbol = form.Symbol.trim().toUpperCase();
+
+    // Match the API's route constraint for symbol routes (comment/portfolio):
+    // letters, digits, dots (BRK.B) or hyphens only.
+    if (!/^[A-Za-z0-9.-]+$/.test(symbol)) {
+      setError(
+        "Symbol may only contain letters, digits, dots (BRK.B) or hyphens."
+      );
+      setSubmitting(false);
+      return;
+    }
+
     const companyName = form.CompanyName.trim();
     const industry = form.Industry.trim();
     const purchase = num(form.Purchase);

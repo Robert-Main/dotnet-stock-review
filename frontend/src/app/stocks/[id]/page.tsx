@@ -18,11 +18,12 @@ import {
   portfolioApi,
   ApiError,
 } from "@/lib/api";
-import type { CommentDto, StockDto } from "@/lib/types";
+import type { CommentDto, LiveQuote, PricePoint, StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency, formatDateTime } from "@/lib/format";
 import { Button, Card, EmptyState, Input, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
+import Sparkline from "@/components/Sparkline";
 
 export default function StockDetailPage() {
   const { user } = useAuth();
@@ -36,6 +37,10 @@ export default function StockDetailPage() {
 
   const [inPortfolio, setInPortfolio] = useState(false);
   const [portfolioBusy, setPortfolioBusy] = useState(false);
+
+  const [quote, setQuote] = useState<LiveQuote | null>(null);
+  const [history, setHistory] = useState<PricePoint[]>([]);
+  const [marketLoading, setMarketLoading] = useState(false);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -96,6 +101,42 @@ export default function StockDetailPage() {
     void loadPortfolio(stock.symbol);
   }, [stock?.symbol, loadPortfolio]);
 
+  // Live quote + price history for the sparkline. Non-critical: failures leave
+  // the page fully usable with the stored fundamentals.
+  useEffect(() => {
+    if (!stock?.symbol) return;
+    let cancelled = false;
+    // Flagging the load before the async fetch — not a cascading render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMarketLoading(true);
+    // allSettled: a history failure must not discard the (often cache-served)
+    // live quote — each result degrades independently.
+    Promise.allSettled([
+      stockApi.liveQuotes([stock.symbol]),
+      stockApi.history(stock.symbol, 30),
+    ]).then(([quoteRes, historyRes]) => {
+      if (cancelled) return;
+      setQuote(
+        quoteRes.status === "fulfilled" ? quoteRes.value.data?.[0] ?? null : null
+      );
+      setHistory(
+        historyRes.status === "fulfilled" ? historyRes.value.data ?? [] : []
+      );
+    })
+      .catch(() => {
+        if (!cancelled) {
+          setQuote(null);
+          setHistory([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setMarketLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stock?.symbol]);
+
   useEffect(() => {
     // Async data fetch on mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -124,7 +165,8 @@ export default function StockDetailPage() {
   // enforce ownership on edit/delete, so gate the controls in the UI to the
   // comment owner to match intent.
   const canManage = (comment: CommentDto) =>
-    !!comment.createdBy && comment.createdBy === user?.userName;
+    !!comment.createdBy &&
+    comment.createdBy.toLowerCase() === (user?.userName ?? "").toLowerCase();
 
   const postComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -280,10 +322,56 @@ export default function StockDetailPage() {
             Market cap
           </p>
           <p className="mt-1.5 font-mono text-2xl font-bold text-zinc-100">
-            {formatCompact(stock.marketCap)}
+            {formatCompact(quote?.marketCap ?? stock.marketCap)}
           </p>
         </Card>
       </div>
+
+      {/* Live price + sparkline */}
+      <Card className="p-6">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-zinc-500">
+                Live price
+              </p>
+              <p className="mt-1 font-mono text-3xl font-bold text-zinc-50">
+                {formatCurrency(quote?.price ?? stock.purchase)}
+              </p>
+              {quote?.change != null && quote?.changePercentage != null && (
+                <span
+                  className={`mt-1.5 inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs font-semibold ${
+                    quote.change >= 0
+                      ? "bg-emerald-500/10 text-emerald-400"
+                      : "bg-red-500/10 text-red-400"
+                  }`}
+                >
+                  {quote.change >= 0 ? "▲" : "▼"}{" "}
+                  {formatCurrency(Math.abs(quote.change))} (
+                  {quote.change >= 0 ? "+" : ""}
+                  {quote.changePercentage.toFixed(2)}%)
+                </span>
+              )}
+              {quote?.dayHigh != null && quote?.dayLow != null && (
+                <p className="mt-2 text-xs text-zinc-500">
+                  Day range {formatCurrency(quote.dayLow)} –{" "}
+                  {formatCurrency(quote.dayHigh)}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <span className="text-xs uppercase tracking-wide text-zinc-500">
+              30-day trend
+            </span>
+            {marketLoading ? (
+              <span className="py-6 text-xs text-zinc-600">Loading…</span>
+            ) : (
+              <Sparkline points={history} width={280} height={72} />
+            )}
+          </div>
+        </div>
+      </Card>
 
       {/* Comments */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

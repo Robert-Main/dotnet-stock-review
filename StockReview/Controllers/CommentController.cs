@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
 using api.Extensions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StockReview.Dtos.Comment;
 using StockReview.Dtos.Stock;
+using StockReview.Helpers;
 using StockReview.Interfaces;
 using StockReview.Mappers;
 using StockReview.Models;
@@ -44,7 +46,7 @@ namespace StockReview.Controllers
         {
             var comment = await _commentRepository.GetCommentByIdAsync(id);
             if (comment == null)
-                return NotFound();
+                return NotFound(ApiResponse.Error("Comment not found"));
 
             return Ok(new
             {
@@ -66,23 +68,25 @@ namespace StockReview.Controllers
             });
         }
 
+        // Ticker symbols may contain letters, digits, dots (BRK.B) or hyphens,
+        // so use a regex constraint instead of the letters-only "alpha".
         [HttpPost]
-        [Route("{symbol:alpha}")]
+        [Route("{symbol:regex(^[[A-Za-z0-9.\\-]]+$)}")]
         public async Task<IActionResult> Create([FromRoute] string symbol, [FromBody] CreateCommentDto createCommentDto)
         {
             if (createCommentDto == null)
             {
-                return BadRequest(new { success = false, message = "Request body is required." });
+                return BadRequest(ApiResponse.Error("Request body is required."));
             }
 
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ApiResponse.FromModelState(ModelState));
             }
 
             if (string.IsNullOrWhiteSpace(symbol))
             {
-                return BadRequest(new { success = false, message = "Stock symbol is required." });
+                return BadRequest(ApiResponse.Error("Stock symbol is required."));
             }
 
             var stock = await _stockRepository.GetStockBySymbolAsync(symbol);
@@ -91,11 +95,7 @@ namespace StockReview.Controllers
                 var remoteStock = await _iFMPService.FindStockBySymbolAsync(symbol);
                 if (remoteStock == null)
                 {
-                    return NotFound(new
-                    {
-                        success = false,
-                        message = "Stock not found"
-                    });
+                    return NotFound(ApiResponse.Error("Stock not found"));
                 }
 
                 stock = await _stockRepository.AddStockAsync(new CreateStock
@@ -117,13 +117,13 @@ namespace StockReview.Controllers
             var username = User.GetUserName();
             if (string.IsNullOrEmpty(username))
             {
-                return Unauthorized(new { success = false, message = "Authenticated user is required." });
+                return Unauthorized(ApiResponse.Error("Authenticated user is required."));
             }
 
             var appUser = await _userManager.FindByNameAsync(username);
             if (appUser == null)
             {
-                return Unauthorized(new { success = false, message = "Authenticated user not found." });
+                return Unauthorized(ApiResponse.Error("Authenticated user not found."));
             }
 
             var comment = await _commentRepository.AddCommentAsync(createCommentDto, appUser.Id);
@@ -136,49 +136,101 @@ namespace StockReview.Controllers
             });
         }
 
+        // Resolve the authenticated AppUser id from the JWT. The token carries
+        // GivenName (username) but no nameidentifier claim, so we look the user
+        // up by name — the same pattern Create uses. Returns null if anonymous
+        // or the user no longer exists.
+        private async Task<string?> GetCurrentUserIdAsync()
+        {
+            var username = User.GetUserName();
+            if (string.IsNullOrEmpty(username)) return null;
+
+            var appUser = await _userManager.FindByNameAsync(username);
+            return appUser?.Id;
+        }
+
+        private bool IsOwner(Comment comment, string appUserId)
+        {
+            return string.Equals(comment.AppUserId, appUserId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Authorize]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateComment(int id, [FromBody] UpdateCommentDto updateCommentDto)
         {
+            if (updateCommentDto == null)
+            {
+                return BadRequest(ApiResponse.Error("Request body is required."));
+            }
+
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ApiResponse.FromModelState(ModelState));
             }
-            var comment = await _commentRepository.UpdateCommentAsync(id, updateCommentDto);
+
+            var appUserId = await GetCurrentUserIdAsync();
+            if (appUserId == null)
+            {
+                return Unauthorized(ApiResponse.Error("Authenticated user is required."));
+            }
+
+            var comment = await _commentRepository.GetCommentEntityByIdAsync(id);
             if (comment == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Comment not found"
-                });
+                return NotFound(ApiResponse.Error("Comment not found"));
+            }
+
+            if (!IsOwner(comment, appUserId))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Error("You can only edit your own comments."));
+            }
+
+            var updated = await _commentRepository.UpdateCommentAsync(id, updateCommentDto);
+            if (updated == null)
+            {
+                return NotFound(ApiResponse.Error("Comment not found"));
             }
 
             return Ok(new
             {
                 success = true,
                 message = "Comment updated successfully",
-                data = CommentMappers.MapToCommentDto(comment)
+                data = CommentMappers.MapToCommentDto(updated)
             });
         }
 
+        [Authorize]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteComment(int id)
         {
-            var comment = await _commentRepository.DeleteCommentAsync(id);
+            var appUserId = await GetCurrentUserIdAsync();
+            if (appUserId == null)
+            {
+                return Unauthorized(ApiResponse.Error("Authenticated user is required."));
+            }
+
+            var comment = await _commentRepository.GetCommentEntityByIdAsync(id);
             if (comment == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Comment not found"
-                });
+                return NotFound(ApiResponse.Error("Comment not found"));
+            }
+
+            if (!IsOwner(comment, appUserId))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ApiResponse.Error("You can only delete your own comments."));
+            }
+
+            var deleted = await _commentRepository.DeleteCommentAsync(id);
+            if (deleted == null)
+            {
+                return NotFound(ApiResponse.Error("Comment not found"));
             }
 
             return Ok(new
             {
                 success = true,
                 message = "Comment deleted successfully",
-                data = CommentMappers.MapToCommentDto(comment)
+                data = CommentMappers.MapToCommentDto(deleted)
             });
         }
     }

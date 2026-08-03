@@ -89,6 +89,14 @@ export interface MessageResponse {
   message: string;
 }
 
+// The single error envelope every controller returns (via ApiResponse).
+// `errors` is either { field: string[] } (validation) or string[] (generic).
+export interface ApiErrorResponse {
+  success: false;
+  message: string;
+  errors?: Record<string, string[]> | string[];
+}
+
 export interface StockListQuery {
   symbol?: string;
   companyName?: string;
@@ -96,4 +104,32 @@ export interface StockListQuery {
   isDescending?: boolean;
   pageNumber?: number;
   pageSize?: number;
+}
+
+export interface LiveQuote {
+  symbol: string | null;
+  name: string | null;
+  price: number | null;
+  change: number | null;
+  changePercentage: number | null;
+  marketCap: number | null;
+  dayHigh: number | null;
+  dayLow: number | null;
+}
+
+export interface LiveQuotesResponse {
+  success: boolean;
+  message: string;
+  data: LiveQuote[];
+}
+
+export interface PricePoint {
+  date: string;
+  price: number;
+}
+
+export interface StockHistoryResponse {
+  success: boolean;
+  message: string;
+  data: PricePoint[];
 }

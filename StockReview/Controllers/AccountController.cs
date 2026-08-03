@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StockReview.Dtos;
 using StockReview.Dtos.Account;
+using StockReview.Helpers;
 using StockReview.Interfaces;
 using StockReview.Models;
 
@@ -35,12 +36,12 @@ namespace StockReview.Controllers
             {
                 if (model == null)
                 {
-                    return BadRequest(new { Message = "Request body is required." });
+                    return BadRequest(ApiResponse.Error("Request body is required."));
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return BadRequest(ApiResponse.FromModelState(ModelState));
                 }
 
                 var user = new AppUser
@@ -55,7 +56,7 @@ namespace StockReview.Controllers
                     var roleResult = await _userManager.AddToRoleAsync(user, "User");
                     if (!roleResult.Succeeded)
                     {
-                        return BadRequest(new { Message = "Error assigning role to user", Errors = roleResult.Errors });
+                        return BadRequest(ApiResponse.Error("Error assigning role to user", roleResult.Errors.Select(e => e.Description).ToArray()));
                     }
                     var token = await _tokenService.CreateTokenAsync(user);
                     return Ok(new
@@ -71,11 +72,11 @@ namespace StockReview.Controllers
                     });
                 }
 
-                return BadRequest(new { Message = "Error creating user", Errors = result.Errors });
+                return BadRequest(ApiResponse.Error("Error creating user", result.Errors.Select(e => e.Description).ToArray()));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while processing your request.", Error = ex.Message });
+                return StatusCode(500, ApiResponse.Error("An error occurred while processing your request.", new[] { ex.Message }));
             }
 
         }
@@ -87,24 +88,24 @@ namespace StockReview.Controllers
             {
                 if (model == null)
                 {
-                    return BadRequest(new { Message = "Request body is required." });
+                    return BadRequest(ApiResponse.Error("Request body is required."));
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return BadRequest(ApiResponse.FromModelState(ModelState));
                 }
 
                 var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == model.Email.ToLower());
                 if (user == null)
                 {
-                    return BadRequest(new { Message = "Invalid email or password." });
+                    return BadRequest(ApiResponse.Error("Invalid email or password."));
                 }
 
                 var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
                 if (!result.Succeeded)
                 {
-                    return BadRequest(new { Message = "Invalid email or password." });
+                    return BadRequest(ApiResponse.Error("Invalid email or password."));
                 }
                 var token = await _tokenService.CreateTokenAsync(user);
 
@@ -122,7 +123,7 @@ namespace StockReview.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while processing your request.", Error = ex.Message });
+                return StatusCode(500, ApiResponse.Error("An error occurred while processing your request.", new[] { ex.Message }));
             }
         }
     }

@@ -11,8 +11,10 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { stockApi, portfolioApi, ApiError } from "@/lib/api";
-import type { StockDto } from "@/lib/types";
+import { ApiError } from "@/lib/api";
+import { stockApi } from "@/services/stockService";
+import { portfolioApi } from "@/services/portfolioService";
+import type { LiveQuote, StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
@@ -36,6 +38,9 @@ export default function DashboardPage() {
   const [inPortfolio, setInPortfolio] = useState<Set<string>>(new Set());
   const [busySymbols, setBusySymbols] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<number | null>(null);
+
+  const [quotes, setQuotes] = useState<Map<string, LiveQuote>>(new Map());
+  const [quotesLoading, setQuotesLoading] = useState(false);
 
   // Monotonic sequence so stale/aborted requests never clobber newer state.
   const fetchSeq = useRef(0);
@@ -104,6 +109,39 @@ export default function DashboardPage() {
     void fetchStocks(controller.signal);
     return () => controller.abort();
   }, [fetchStocks]);
+
+  // Fetch live quotes for the currently displayed page of stocks.
+  useEffect(() => {
+    // Dedupe (the DB can hold duplicate symbols) and normalize to uppercase so
+    // card lookups always match regardless of FMP's casing.
+    const symbols = Array.from(
+      new Set(stocks.map((s) => s.symbol?.toUpperCase() ?? "").filter(Boolean))
+    );
+    if (symbols.length === 0) return;
+    let cancelled = false;
+    // Flagging the load before the async fetch — not a cascading render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQuotesLoading(true);
+    stockApi
+      .liveQuotes(symbols)
+      .then((res) => {
+        if (cancelled) return;
+        setQuotes(
+          new Map(
+            (res.data ?? []).map((q) => [q.symbol?.toUpperCase() ?? "", q])
+          )
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setQuotes(new Map());
+      })
+      .finally(() => {
+        if (!cancelled) setQuotesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stocks]);
 
   useEffect(() => {
     // Async data fetch on mount.
@@ -240,6 +278,11 @@ export default function DashboardPage() {
             const symbol = (stock.symbol ?? "?").toUpperCase();
             const inP = inPortfolio.has(symbol);
             const busy = busySymbols.has(symbol);
+            const quote = quotes.get(symbol);
+            const livePrice = quote?.price ?? null;
+            const change = quote?.change ?? null;
+            const changePct = quote?.changePercentage ?? null;
+            const up = (change ?? 0) >= 0;
             return (
               <Card
                 key={stock.id}
@@ -259,32 +302,55 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 rounded-xl border border-zinc-800/70 bg-zinc-950/40 p-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                      Price
-                    </p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold text-emerald-400">
-                      {formatCurrency(stock.purchase)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                      Last div
-                    </p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold text-zinc-200">
-                      {formatCurrency(stock.lastDiv)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                      Mkt cap
-                    </p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold text-zinc-200">
-                      {formatCompact(stock.marketCap)}
-                    </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="grid flex-1 grid-cols-3 gap-3 rounded-xl border border-zinc-800/70 bg-zinc-950/40 p-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                        {livePrice != null ? "Live" : "Price"}
+                      </p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold text-emerald-400">
+                        {formatCurrency(livePrice ?? stock.purchase)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                        Last div
+                      </p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold text-zinc-200">
+                        {formatCurrency(stock.lastDiv)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                        Mkt cap
+                      </p>
+                      <p className="mt-0.5 font-mono text-sm font-semibold text-zinc-200">
+                        {formatCompact(quote?.marketCap ?? stock.marketCap)}
+                      </p>
+                    </div>
                   </div>
                 </div>
+
+                {change != null && changePct != null && (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-1 font-mono text-xs font-semibold ${
+                        up
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : "bg-red-500/10 text-red-400"
+                      }`}
+                    >
+                      {up ? "▲" : "▼"} {formatCurrency(Math.abs(change))}{" "}
+                      ({up ? "+" : ""}
+                      {changePct.toFixed(2)}%)
+                    </span>
+                    {quotesLoading && (
+                      <span className="text-[11px] text-zinc-600">
+                        refreshing…
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between border-t border-zinc-800/70 pt-4">
                   <span className="inline-flex items-center gap-1.5 text-xs text-zinc-500">
