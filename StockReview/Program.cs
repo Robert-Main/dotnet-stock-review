@@ -1,8 +1,11 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using StockReview.Data;
+using StockReview.Helpers;
 using StockReview.Interfaces;
 using StockReview.Models;
 using StockReview.Repositories;
@@ -76,6 +79,39 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
+
+// Global exception handler — must be FIRST so it wraps the whole pipeline.
+// Any unhandled exception becomes a canonical { success: false, message }
+// 500; the real exception is logged server-side, never sent to the client.
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+        var logger = context.RequestServices
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger("GlobalExceptionHandler");
+        logger.LogError(exception, "Unhandled exception while processing {Method} {Path}",
+            context.Request.Method, context.Request.Path);
+
+        // The handler clears the response, so re-apply the CORS header for the
+        // same origins the AllowNextJs policy allows — otherwise the browser
+        // blocks reading the error body on cross-origin requests.
+        var origin = context.Request.Headers["Origin"].ToString();
+        if (origin == "http://localhost:3000" || origin == "https://localhost:3000")
+        {
+            context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+            context.Response.Headers["Vary"] = "Origin";
+        }
+
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json; charset=utf-8";
+
+        var body = ApiResponse.Error("An unexpected error occurred while processing your request.");
+        await context.Response.WriteAsync(JsonSerializer.Serialize(body));
+    });
+});
 
 if (app.Environment.IsDevelopment())
 {
