@@ -1,7 +1,7 @@
 import { request } from "@/lib/api";
 import type { AuthResponse } from "@/lib/types";
 
-export const authApi = {
+export const authService = {
   register: (username: string, email: string, password: string) =>
     request<AuthResponse>("/api/account/register", {
       method: "POST",

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api";
-import { stockApi } from "@/services/stockService";
+import { stockService } from "@/services/stockService";
+import { fieldError, fieldErrorsMatchAny } from "@/lib/formErrors";
 import { Button, Card, Input } from "@/components/ui";
 
 interface StockFormProps {
@@ -33,6 +34,8 @@ export default function StockForm({ mode, initial }: StockFormProps) {
     MarketCap: initial?.marketCap?.toString() ?? "",
   });
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] =
+    useState<ApiError["errors"]>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
   const set = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -41,6 +44,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors(undefined);
     setSubmitting(true);
 
     const num = (s: string) => Number(s);
@@ -65,7 +69,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
 
     try {
       if (mode === "create") {
-        const created = await stockApi.create({
+        const created = await stockService.create({
           symbol,
           companyName,
           purchase,
@@ -77,7 +81,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
         });
         router.push(`/stocks/${created.id}`);
       } else if (initial) {
-        await stockApi.update(initial.id, {
+        await stockService.update(initial.id, {
           symbol,
           companyName,
           purchase,
@@ -89,9 +93,12 @@ export default function StockForm({ mode, initial }: StockFormProps) {
         router.push(`/stocks/${initial.id}`);
       }
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Could not save the stock."
-      );
+      if (err instanceof ApiError) {
+        setError(err.message);
+        setFieldErrors(err.errors);
+      } else {
+        setError("Could not save the stock.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -109,11 +116,21 @@ export default function StockForm({ mode, initial }: StockFormProps) {
       </p>
 
       <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
-        {error && (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
-          </div>
-        )}
+        {error &&
+          !fieldErrorsMatchAny(fieldErrors, [
+            "symbol",
+            "companyName",
+            "purchase",
+            "divided",
+            "lastDiv",
+            "industry",
+            "sector",
+            "marketCap",
+          ]) && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <Input
@@ -125,6 +142,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             className="font-mono uppercase"
             value={form.Symbol}
             onChange={set("Symbol")}
+            error={fieldError(fieldErrors, "symbol")}
           />
           <Input
             id="companyName"
@@ -134,6 +152,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             placeholder="Apple Inc."
             value={form.CompanyName}
             onChange={set("CompanyName")}
+            error={fieldError(fieldErrors, "companyName")}
           />
         </div>
 
@@ -148,6 +167,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             placeholder="0.00"
             value={form.Purchase}
             onChange={set("Purchase")}
+            error={fieldError(fieldErrors, "purchase")}
           />
           <Input
             id="divided"
@@ -159,6 +179,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             placeholder="0.00"
             value={form.Divided}
             onChange={set("Divided")}
+            error={fieldError(fieldErrors, "divided")}
           />
           <Input
             id="lastDiv"
@@ -170,6 +191,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             placeholder="0.00"
             value={form.LastDiv}
             onChange={set("LastDiv")}
+            error={fieldError(fieldErrors, "lastDiv")}
           />
         </div>
 
@@ -182,6 +204,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             placeholder="Technology"
             value={form.Industry}
             onChange={set("Industry")}
+            error={fieldError(fieldErrors, "industry")}
           />
           {mode === "create" ? (
             <Input
@@ -191,6 +214,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
               placeholder="Technology (defaults to Unknown)"
               value={form.Sector}
               onChange={set("Sector")}
+              error={fieldError(fieldErrors, "sector")}
             />
           ) : (
             <Input
@@ -202,6 +226,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
               placeholder="2500000000"
               value={form.MarketCap}
               onChange={set("MarketCap")}
+              error={fieldError(fieldErrors, "marketCap")}
             />
           )}
         </div>
@@ -216,6 +241,7 @@ export default function StockForm({ mode, initial }: StockFormProps) {
             placeholder="2500000000"
             value={form.MarketCap}
             onChange={set("MarketCap")}
+            error={fieldError(fieldErrors, "marketCap")}
           />
         ) : null}
 

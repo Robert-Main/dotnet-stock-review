@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
+import { fieldError, fieldErrorsMatchAny } from "@/lib/formErrors";
 import { Button, Input } from "@/components/ui";
 
 export default function RegisterPage() {
@@ -16,6 +17,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] =
+    useState<ApiError["errors"]>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -25,6 +28,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors(undefined);
 
     if (password !== confirm) {
       setError("Passwords do not match.");
@@ -36,9 +40,12 @@ export default function RegisterPage() {
       await register(username, email, password);
       router.push("/");
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Something went wrong. Try again."
-      );
+      if (err instanceof ApiError) {
+        setError(err.message);
+        setFieldErrors(err.errors);
+      } else {
+        setError("Something went wrong. Try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -62,7 +69,8 @@ export default function RegisterPage() {
         onSubmit={handleSubmit}
         className="rise-in flex flex-col gap-5 rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-6 backdrop-blur-sm"
       >
-        {error && (
+        {error &&
+          !fieldErrorsMatchAny(fieldErrors, ["username", "email", "password"]) && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
@@ -75,6 +83,7 @@ export default function RegisterPage() {
           placeholder="stocknerd"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          error={fieldError(fieldErrors, "username")}
         />
         <Input
           id="email"
@@ -85,6 +94,7 @@ export default function RegisterPage() {
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          error={fieldError(fieldErrors, "email")}
         />
         <Input
           id="password"
@@ -95,6 +105,7 @@ export default function RegisterPage() {
           placeholder="At least 6 chars, incl. a digit, upper & symbol"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          error={fieldError(fieldErrors, "password")}
         />
         <Input
           id="confirm"

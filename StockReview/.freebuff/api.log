@@ -350,3 +350,15 @@ info: System.Net.Http.HttpClient.IFMPInterface.ClientHandler[101]
       Received HTTP response headers after 1292.9591ms - 200
 info: System.Net.Http.HttpClient.IFMPInterface.LogicalHandler[101]
       End processing HTTP request after 1293.0523ms - 200
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (174ms) [Parameters=[@stockId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [c].[Id], [c].[StockId], [c].[Title], [c].[Content], [c].[CreatedAt], [a].[UserName] AS [CreatedBy]
+      FROM [Comments] AS [c]
+      LEFT JOIN [AspNetUsers] AS [a] ON [c].[AppUserId] = [a].[Id]
+      WHERE [c].[StockId] = @stockId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (7ms) [Parameters=[@stockId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT [c].[Id], [c].[StockId], [c].[Title], [c].[Content], [c].[CreatedAt], [a].[UserName] AS [CreatedBy]
+      FROM [Comments] AS [c]
+      LEFT JOIN [AspNetUsers] AS [a] ON [c].[AppUserId] = [a].[Id]
+      WHERE [c].[StockId] = @stockId

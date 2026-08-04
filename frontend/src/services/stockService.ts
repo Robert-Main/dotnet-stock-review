@@ -11,7 +11,7 @@ import type {
   UpdateStockPayload,
 } from "@/lib/types";
 
-export const stockApi = {
+export const stockService = {
   list: (query: StockListQuery = {}, signal?: AbortSignal) => {
     const params = new URLSearchParams();
     if (query.symbol) params.set("symbol", query.symbol);

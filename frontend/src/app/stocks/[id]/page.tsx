@@ -12,21 +12,22 @@ import {
   Trash2,
   User,
 } from "lucide-react";
-import {
-  stockApi,
-  commentApi,
-  portfolioApi,
-  ApiError,
-} from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { stockService } from "@/services/stockService";
+import { commentService } from "@/services/commentService";
+import { portfolioService } from "@/services/portfolioService";
+import { fieldError, fieldErrorsMatchAny } from "@/lib/formErrors";
 import type { CommentDto, LiveQuote, PricePoint, StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency, formatDateTime } from "@/lib/format";
 import { Button, Card, EmptyState, Input, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/components/Toast";
 import Sparkline from "@/components/Sparkline";
 
 export default function StockDetailPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const params = useParams<{ id: string }>();
   const id = Number(params.id);
 
@@ -46,6 +47,8 @@ export default function StockDetailPage() {
   const [content, setContent] = useState("");
   const [posting, setPosting] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentFieldErrors, setCommentFieldErrors] =
+    useState<ApiError["errors"]>(undefined);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -55,7 +58,7 @@ export default function StockDetailPage() {
 
   const loadStock = useCallback(async () => {
     try {
-      const res = await stockApi.get(id);
+      const res = await stockService.get(id);
       setStock(res.stock);
     } catch (err) {
       setError(
@@ -69,7 +72,7 @@ export default function StockDetailPage() {
   // Portfolio membership is non-critical — a failure must never blank the page.
   const loadPortfolio = useCallback(async (symbol: string) => {
     try {
-      const portfolio = await portfolioApi.list();
+      const portfolio = await portfolioService.list();
       setInPortfolio(
         portfolio.some((s) => s.symbol?.toUpperCase() === symbol.toUpperCase())
       );
@@ -80,7 +83,7 @@ export default function StockDetailPage() {
 
   const loadComments = useCallback(async () => {
     try {
-      const res = await commentApi.forStock(id);
+      const res = await commentService.forStock(id);
       setComments(res.data ?? []);
     } catch {
       setComments([]);
@@ -112,8 +115,8 @@ export default function StockDetailPage() {
     // allSettled: a history failure must not discard the (often cache-served)
     // live quote — each result degrades independently.
     Promise.allSettled([
-      stockApi.liveQuotes([stock.symbol]),
-      stockApi.history(stock.symbol, 30),
+      stockService.liveQuotes([stock.symbol]),
+      stockService.history(stock.symbol, 30),
     ]).then(([quoteRes, historyRes]) => {
       if (cancelled) return;
       setQuote(
@@ -148,14 +151,16 @@ export default function StockDetailPage() {
     setPortfolioBusy(true);
     try {
       if (inPortfolio) {
-        await portfolioApi.remove(stock.symbol);
+        await portfolioService.remove(stock.symbol);
         setInPortfolio(false);
       } else {
-        await portfolioApi.add(stock.symbol);
+        await portfolioService.add(stock.symbol);
         setInPortfolio(true);
       }
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not update portfolio.");
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not update portfolio."
+      );
     } finally {
       setPortfolioBusy(false);
     }
@@ -172,16 +177,20 @@ export default function StockDetailPage() {
     e.preventDefault();
     if (!stock?.symbol) return;
     setCommentError(null);
+    setCommentFieldErrors(undefined);
     setPosting(true);
     try {
-      await commentApi.create(stock.symbol, { title, content });
+      await commentService.create(stock.symbol, { title, content });
       setTitle("");
       setContent("");
       await Promise.all([loadComments(), loadStock()]);
     } catch (err) {
-      setCommentError(
-        err instanceof ApiError ? err.message : "Could not post comment."
-      );
+      if (err instanceof ApiError) {
+        setCommentError(err.message);
+        setCommentFieldErrors(err.errors);
+      } else {
+        setCommentError("Could not post comment.");
+      }
     } finally {
       setPosting(false);
     }
@@ -196,17 +205,21 @@ export default function StockDetailPage() {
   const saveEdit = async (commentId: number) => {
     setSavingEdit(true);
     setCommentError(null);
+    setCommentFieldErrors(undefined);
     try {
-      await commentApi.update(commentId, {
+      await commentService.update(commentId, {
         title: editTitle,
         content: editContent,
       });
       setEditingId(null);
       await loadComments();
     } catch (err) {
-      setCommentError(
-        err instanceof ApiError ? err.message : "Could not update comment."
-      );
+      if (err instanceof ApiError) {
+        setCommentError(err.message);
+        setCommentFieldErrors(err.errors);
+      } else {
+        setCommentError("Could not update comment.");
+      }
     } finally {
       setSavingEdit(false);
     }
@@ -216,10 +229,12 @@ export default function StockDetailPage() {
     if (!confirm("Delete this comment?")) return;
     setDeletingId(commentId);
     try {
-      await commentApi.remove(commentId);
+      await commentService.remove(commentId);
       await loadComments();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not delete comment.");
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not delete comment."
+      );
     } finally {
       setDeletingId(null);
     }
@@ -397,19 +412,42 @@ export default function StockDetailPage() {
                 >
                   {editingId === c.id ? (
                     <div className="flex flex-col gap-3">
-                      <input
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        placeholder="Title"
-                        className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/60"
-                      />
-                      <textarea
-                        value={editContent}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        placeholder="Your review…"
-                        rows={3}
-                        className="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/60"
-                      />
+                      {commentError &&
+                        !fieldErrorsMatchAny(commentFieldErrors, [
+                          "title",
+                          "content",
+                        ]) && (
+                          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                            {commentError}
+                          </div>
+                        )}
+                      <div>
+                        <input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder="Title"
+                          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/60"
+                        />
+                        {fieldError(commentFieldErrors, "title") && (
+                          <p className="mt-1 text-xs text-red-400">
+                            {fieldError(commentFieldErrors, "title")}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          placeholder="Your review…"
+                          rows={3}
+                          className="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/60"
+                        />
+                        {fieldError(commentFieldErrors, "content") && (
+                          <p className="mt-1 text-xs text-red-400">
+                            {fieldError(commentFieldErrors, "content")}
+                          </p>
+                        )}
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           onClick={() => saveEdit(c.id!)}
@@ -482,11 +520,12 @@ export default function StockDetailPage() {
             Write a review
           </h2>
           <form onSubmit={postComment} className="flex flex-col gap-4">
-            {commentError && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                {commentError}
-              </div>
-            )}
+            {commentError &&
+              !fieldErrorsMatchAny(commentFieldErrors, ["title", "content"]) && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                  {commentError}
+                </div>
+              )}
             <Input
               id="comment-title"
               label="Title"
@@ -495,6 +534,7 @@ export default function StockDetailPage() {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={100}
               required
+              error={fieldError(commentFieldErrors, "title")}
             />
             <label className="block">
               <span className="mb-1.5 block text-sm font-medium text-zinc-300">
@@ -509,6 +549,11 @@ export default function StockDetailPage() {
                 placeholder="Share your thoughts on this stock…"
                 className="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900/60 px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20"
               />
+              {fieldError(commentFieldErrors, "content") && (
+                <span className="mt-1 block text-xs text-red-400">
+                  {fieldError(commentFieldErrors, "content")}
+                </span>
+              )}
             </label>
             <Button type="submit" loading={posting}>
               Post review

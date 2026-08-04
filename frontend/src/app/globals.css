@@ -34,6 +34,22 @@ body {
   animation: rise-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Toast entrance: slide up + fade in from the bottom-right */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toast-in {
+  animation: toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

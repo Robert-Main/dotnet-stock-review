@@ -15,7 +15,7 @@ import {
   setStoredUser,
   setToken,
 } from "@/lib/api";
-import { authApi } from "@/services/authService";
+import { authService } from "@/services/authService";
 import type { AuthUser } from "@/lib/types";
 
 interface AuthContextValue {
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await authApi.login(email, password);
+    const res = await authService.login(email, password);
     setToken(res.token);
     setStoredUser(res.user);
     setUser(res.user);
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback(
     async (username: string, email: string, password: string) => {
-      const res = await authApi.register(username, email, password);
+      const res = await authService.register(username, email, password);
       setToken(res.token);
       setStoredUser(res.user);
       setUser(res.user);

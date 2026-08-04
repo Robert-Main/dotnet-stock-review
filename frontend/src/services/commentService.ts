@@ -5,7 +5,7 @@ import type {
   CreateCommentPayload,
 } from "@/lib/types";
 
-export const commentApi = {
+export const commentService = {
   forStock: (stockId: number) =>
     request<CommentListResponse>(`/api/comment/stock/${stockId}`),
   all: () => request<CommentListResponse>("/api/comment"),

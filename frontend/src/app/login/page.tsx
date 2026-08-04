@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
+import { fieldError, fieldErrorsMatchAny } from "@/lib/formErrors";
 import { Button, Input } from "@/components/ui";
 
 export default function LoginPage() {
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] =
+    useState<ApiError["errors"]>(undefined);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -23,14 +26,18 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors(undefined);
     setSubmitting(true);
     try {
       await login(email, password);
       router.push("/");
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Something went wrong. Try again."
-      );
+      if (err instanceof ApiError) {
+        setError(err.message);
+        setFieldErrors(err.errors);
+      } else {
+        setError("Something went wrong. Try again.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -54,7 +61,7 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="rise-in flex flex-col gap-5 rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-6 backdrop-blur-sm"
       >
-        {error && (
+        {error && !fieldErrorsMatchAny(fieldErrors, ["email", "password"]) && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
             {error}
           </div>
@@ -68,6 +75,7 @@ export default function LoginPage() {
           placeholder="you@example.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          error={fieldError(fieldErrors, "email")}
         />
         <Input
           id="password"
@@ -78,6 +86,7 @@ export default function LoginPage() {
           placeholder="••••••••"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          error={fieldError(fieldErrors, "password")}
         />
         <Button type="submit" loading={submitting} className="w-full py-2.5">
           Sign in

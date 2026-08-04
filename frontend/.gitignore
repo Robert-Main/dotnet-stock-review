@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# avoid the .freebuff directory being committed to the repository
+.freebuff/*
+.freebuff.lock
+

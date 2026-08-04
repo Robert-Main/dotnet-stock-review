@@ -4,13 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { BarChart3, Plus, Trash2 } from "lucide-react";
 import { ApiError } from "@/lib/api";
-import { portfolioApi } from "@/services/portfolioService";
+import { portfolioService } from "@/services/portfolioService";
 import type { StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
+import { useToast } from "@/components/Toast";
 
 export default function PortfolioPage() {
+  const toast = useToast();
   const [stocks, setStocks] = useState<StockDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export default function PortfolioPage() {
     setLoading(true);
     setError(null);
     try {
-      setStocks(await portfolioApi.list());
+      setStocks(await portfolioService.list());
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Could not load your portfolio."
@@ -45,7 +47,7 @@ export default function PortfolioPage() {
     setAdding(true);
     setError(null);
     try {
-      await portfolioApi.add(symbol);
+      await portfolioService.add(symbol);
       setNewSymbol("");
       await load();
     } catch (err) {
@@ -61,10 +63,12 @@ export default function PortfolioPage() {
     if (!confirm(`Remove ${symbol} from your portfolio?`)) return;
     setRemoving(symbol);
     try {
-      await portfolioApi.remove(symbol);
+      await portfolioService.remove(symbol);
       await load();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not remove stock.");
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not remove stock."
+      );
     } finally {
       setRemoving(null);
     }

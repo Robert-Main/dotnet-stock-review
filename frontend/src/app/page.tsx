@@ -12,18 +12,20 @@ import {
   Trash2,
 } from "lucide-react";
 import { ApiError } from "@/lib/api";
-import { stockApi } from "@/services/stockService";
-import { portfolioApi } from "@/services/portfolioService";
+import { stockService } from "@/services/stockService";
+import { portfolioService } from "@/services/portfolioService";
 import type { LiveQuote, StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
+import { useToast } from "@/components/Toast";
 
 const PAGE_SIZE = 9;
 
 type SortField = "symbol" | "companyName";
 
 export default function DashboardPage() {
+  const toast = useToast();
   const [stocks, setStocks] = useState<StockDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await stockApi.list(
+        const res = await stockService.list(
           {
             symbol: debouncedSearch || undefined,
             companyName: debouncedSearch || undefined,
@@ -89,7 +91,7 @@ export default function DashboardPage() {
 
   const fetchPortfolio = useCallback(async () => {
     try {
-      const portfolio = await portfolioApi.list();
+      const portfolio = await portfolioService.list();
       setInPortfolio(
         new Set(
           portfolio
@@ -122,7 +124,7 @@ export default function DashboardPage() {
     // Flagging the load before the async fetch — not a cascading render.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuotesLoading(true);
-    stockApi
+    stockService
       .liveQuotes(symbols)
       .then((res) => {
         if (cancelled) return;
@@ -155,18 +157,20 @@ export default function DashboardPage() {
     setBusySymbols((prev) => new Set(prev).add(upper));
     try {
       if (inPortfolio.has(upper)) {
-        await portfolioApi.remove(symbol);
+        await portfolioService.remove(symbol);
         setInPortfolio((prev) => {
           const next = new Set(prev);
           next.delete(upper);
           return next;
         });
       } else {
-        await portfolioApi.add(symbol);
+        await portfolioService.add(symbol);
         setInPortfolio((prev) => new Set(prev).add(upper));
       }
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not update portfolio.");
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not update portfolio."
+      );
     } finally {
       setBusySymbols((prev) => {
         const next = new Set(prev);
@@ -180,10 +184,12 @@ export default function DashboardPage() {
     if (!confirm(`Delete ${stock.symbol}? This cannot be undone.`)) return;
     setDeleting(stock.id);
     try {
-      await stockApi.remove(stock.id);
+      await stockService.remove(stock.id);
       await fetchStocks();
     } catch (err) {
-      alert(err instanceof ApiError ? err.message : "Could not delete stock.");
+      toast.error(
+        err instanceof ApiError ? err.message : "Could not delete stock."
+      );
     } finally {
       setDeleting(null);
     }

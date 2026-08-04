@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { stockApi, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
+import { stockService } from "@/services/stockService";
 import type { StockDto } from "@/lib/types";
 import RequireAuth from "@/components/RequireAuth";
 import StockForm from "@/components/StockForm";
@@ -14,9 +15,7 @@ export default function EditStockPage() {
   const [stock, setStock] = useState<StockDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    stockApi
-      .get(id)
+  useEffect(() => {stockService.get(id)
       .then((res) => setStock(res.stock))
       .catch((err) =>
         setError(err instanceof ApiError ? err.message : "Could not load stock.")
