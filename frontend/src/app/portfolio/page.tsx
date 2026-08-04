@@ -1,15 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { BarChart3, Plus, Trash2 } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { portfolioService } from "@/services/portfolioService";
+import {
+  portfolioSymbolSchema,
+  type PortfolioSymbolValues,
+} from "@/lib/schemas";
 import type { StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
 import { useToast } from "@/components/Toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function PortfolioPage() {
   const toast = useToast();
@@ -17,8 +24,16 @@ export default function PortfolioPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
-  const [newSymbol, setNewSymbol] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting: adding },
+  } = useForm<PortfolioSymbolValues>({
+    resolver: zodResolver(portfolioSymbolSchema),
+    defaultValues: { symbol: "" },
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -26,13 +41,13 @@ export default function PortfolioPage() {
     try {
       setStocks(await portfolioService.list());
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiError ? err.message : "Could not load your portfolio."
       );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     // Async data fetch on mount.
@@ -40,30 +55,28 @@ export default function PortfolioPage() {
     void load();
   }, [load]);
 
-  const addStock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const symbol = newSymbol.trim().toUpperCase();
+  const addStock = async (values: PortfolioSymbolValues) => {
+    const symbol = values.symbol.trim().toUpperCase();
     if (!symbol) return;
-    setAdding(true);
     setError(null);
     try {
       await portfolioService.add(symbol);
-      setNewSymbol("");
+      reset();
+      toast.success(`Added ${symbol} to your portfolio!`);
       await load();
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiError ? err.message : "Could not add that symbol."
       );
-    } finally {
-      setAdding(false);
     }
   };
 
   const removeStock = async (symbol: string) => {
-    if (!confirm(`Remove ${symbol} from your portfolio?`)) return;
     setRemoving(symbol);
     try {
       await portfolioService.remove(symbol);
+      toast.success(`Removed ${symbol} from your portfolio.`);
+      setPendingRemove(null);
       await load();
     } catch (err) {
       toast.error(
@@ -120,13 +133,24 @@ export default function PortfolioPage() {
 
       {/* Add symbol */}
       <Card className="p-4">
-        <form onSubmit={addStock} className="flex flex-col gap-3 sm:flex-row">
-          <input
-            value={newSymbol}
-            onChange={(e) => setNewSymbol(e.target.value)}
-            placeholder="e.g. AAPL"
-            className="flex-1 rounded-lg border border-zinc-800 bg-zinc-900/60 px-3.5 py-2.5 font-mono text-sm uppercase text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20"
-          />
+        <form onSubmit={handleSubmit(addStock)} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="flex-1">
+            <input
+              id="symbol"
+              placeholder="e.g. AAPL"
+              aria-invalid={errors.symbol ? true : undefined}
+              aria-describedby={errors.symbol ? "symbol-error" : undefined}
+              className={`w-full rounded-lg border bg-zinc-900/60 px-3.5 py-2.5 font-mono text-sm uppercase text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 ${
+                errors.symbol ? "border-red-500/60" : "border-zinc-800"
+              }`}
+              {...register("symbol")}
+            />
+            {errors.symbol && (
+              <span id="symbol-error" className="mt-1 block text-xs text-red-400">
+                {errors.symbol.message}
+              </span>
+            )}
+          </div>
           <Button type="submit" loading={adding}>
             <Plus size={16} />
             Add to portfolio
@@ -201,7 +225,7 @@ export default function PortfolioPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => removeStock(symbol)}
+                    onClick={() => setPendingRemove(symbol)}
                     disabled={removing === symbol}
                     title={`Remove ${symbol}`}
                     className="inline-flex items-center justify-center rounded-lg border border-zinc-800 p-2 text-zinc-500 transition-colors hover:border-red-500/40 hover:text-red-400 disabled:opacity-50"
@@ -218,6 +242,27 @@ export default function PortfolioPage() {
           </p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingRemove}
+        title={`Remove ${pendingRemove ?? ""}?`}
+        message={
+          pendingRemove && (
+            <>
+              <span className="font-mono font-semibold text-zinc-200">
+                {pendingRemove}
+              </span>{" "}
+              will be removed from your portfolio. The stock stays on the
+              markets.
+            </>
+          )
+        }
+        confirmLabel="Remove from portfolio"
+        onConfirm={() =>
+          pendingRemove ? removeStock(pendingRemove) : Promise.resolve()
+        }
+        onClose={() => setPendingRemove(null)}
+      />
     </div>
     </RequireAuth>
   );

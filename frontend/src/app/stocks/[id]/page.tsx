@@ -16,13 +16,14 @@ import { ApiError } from "@/lib/api";
 import { stockService } from "@/services/stockService";
 import { commentService } from "@/services/commentService";
 import { portfolioService } from "@/services/portfolioService";
-import { fieldError, fieldErrorsMatchAny } from "@/lib/formErrors";
 import type { CommentDto, LiveQuote, PricePoint, StockDto } from "@/lib/types";
 import { formatCompact, formatCurrency, formatDateTime } from "@/lib/format";
-import { Button, Card, EmptyState, Input, Spinner } from "@/components/ui";
+import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/components/Toast";
+import CommentForm from "@/components/CommentForm";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import Sparkline from "@/components/Sparkline";
 
 export default function StockDetailPage() {
@@ -43,18 +44,10 @@ export default function StockDetailPage() {
   const [history, setHistory] = useState<PricePoint[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [posting, setPosting] = useState(false);
-  const [commentError, setCommentError] = useState<string | null>(null);
-  const [commentFieldErrors, setCommentFieldErrors] =
-    useState<ApiError["errors"]>(undefined);
-
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState("");
-  const [editContent, setEditContent] = useState("");
-  const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeleteComment, setPendingDeleteComment] =
+    useState<CommentDto | null>(null);
 
   const loadStock = useCallback(async () => {
     try {
@@ -173,63 +166,30 @@ export default function StockDetailPage() {
     !!comment.createdBy &&
     comment.createdBy.toLowerCase() === (user?.userName ?? "").toLowerCase();
 
-  const postComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stock?.symbol) return;
-    setCommentError(null);
-    setCommentFieldErrors(undefined);
-    setPosting(true);
-    try {
-      await commentService.create(stock.symbol, { title, content });
-      setTitle("");
-      setContent("");
-      await Promise.all([loadComments(), loadStock()]);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setCommentError(err.message);
-        setCommentFieldErrors(err.errors);
-      } else {
-        setCommentError("Could not post comment.");
-      }
-    } finally {
-      setPosting(false);
-    }
-  };
-
   const startEdit = (c: CommentDto) => {
     setEditingId(c.id);
-    setEditTitle(c.title ?? "");
-    setEditContent(c.content ?? "");
   };
 
-  const saveEdit = async (commentId: number) => {
-    setSavingEdit(true);
-    setCommentError(null);
-    setCommentFieldErrors(undefined);
-    try {
-      await commentService.update(commentId, {
-        title: editTitle,
-        content: editContent,
-      });
-      setEditingId(null);
+  const onCommentSaved = async () => {
+    if (stock?.symbol) {
+      await Promise.all([loadComments(), loadStock()]);
+    } else {
       await loadComments();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setCommentError(err.message);
-        setCommentFieldErrors(err.errors);
-      } else {
-        setCommentError("Could not update comment.");
-      }
-    } finally {
-      setSavingEdit(false);
     }
   };
 
-  const deleteComment = async (commentId: number) => {
-    if (!confirm("Delete this comment?")) return;
-    setDeletingId(commentId);
+  const onEditSaved = async () => {
+    setEditingId(null);
+    await loadComments();
+  };
+
+  const deleteComment = async (comment: CommentDto) => {
+    if (comment.id == null) return;
+    setDeletingId(comment.id);
     try {
-      await commentService.remove(commentId);
+      await commentService.remove(comment.id);
+      toast.success("Review deleted.");
+      setPendingDeleteComment(null);
       await loadComments();
     } catch (err) {
       toast.error(
@@ -388,6 +348,26 @@ export default function StockDetailPage() {
         </div>
       </Card>
 
+      <ConfirmDialog
+        open={!!pendingDeleteComment}
+        title="Delete this review?"
+        message={
+          pendingDeleteComment && (
+            <>
+              “{pendingDeleteComment.title ?? "Untitled"}” will be permanently
+              removed. This cannot be undone.
+            </>
+          )
+        }
+        confirmLabel="Delete review"
+        onConfirm={() =>
+          pendingDeleteComment
+            ? deleteComment(pendingDeleteComment)
+            : Promise.resolve()
+        }
+        onClose={() => setPendingDeleteComment(null)}
+      />
+
       {/* Comments */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Comment list */}
@@ -411,60 +391,13 @@ export default function StockDetailPage() {
                   className="rounded-xl border border-zinc-800/70 bg-zinc-950/40 p-4"
                 >
                   {editingId === c.id ? (
-                    <div className="flex flex-col gap-3">
-                      {commentError &&
-                        !fieldErrorsMatchAny(commentFieldErrors, [
-                          "title",
-                          "content",
-                        ]) && (
-                          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                            {commentError}
-                          </div>
-                        )}
-                      <div>
-                        <input
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder="Title"
-                          className="w-full rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/60"
-                        />
-                        {fieldError(commentFieldErrors, "title") && (
-                          <p className="mt-1 text-xs text-red-400">
-                            {fieldError(commentFieldErrors, "title")}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <textarea
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          placeholder="Your review…"
-                          rows={3}
-                          className="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-500/60"
-                        />
-                        {fieldError(commentFieldErrors, "content") && (
-                          <p className="mt-1 text-xs text-red-400">
-                            {fieldError(commentFieldErrors, "content")}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => saveEdit(c.id!)}
-                          loading={savingEdit}
-                          className="!px-3 !py-1.5 !text-xs"
-                        >
-                          Save
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => setEditingId(null)}
-                          className="!px-3 !py-1.5 !text-xs"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
+                    <CommentForm
+                      key={`edit-${c.id}`}
+                      comment={c}
+                      compact
+                      onSaved={onEditSaved}
+                      onCancel={() => setEditingId(null)}
+                    />
                   ) : (
                     <>
                       <div className="flex items-start justify-between gap-3">
@@ -486,13 +419,14 @@ export default function StockDetailPage() {
                           <div className="flex items-center gap-1">
                             <button
                               onClick={() => startEdit(c)}
-                              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+                              disabled={!!editingId}
+                              className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-50"
                               title="Edit"
                             >
                               <Pencil size={14} />
                             </button>
                             <button
-                              onClick={() => deleteComment(c.id!)}
+                              onClick={() => setPendingDeleteComment(c)}
                               disabled={deletingId === c.id}
                               className="rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                               title="Delete"
@@ -519,45 +453,10 @@ export default function StockDetailPage() {
             <Plus size={18} className="text-emerald-400" />
             Write a review
           </h2>
-          <form onSubmit={postComment} className="flex flex-col gap-4">
-            {commentError &&
-              !fieldErrorsMatchAny(commentFieldErrors, ["title", "content"]) && (
-                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
-                  {commentError}
-                </div>
-              )}
-            <Input
-              id="comment-title"
-              label="Title"
-              placeholder="Great long-term pick"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={100}
-              required
-              error={fieldError(commentFieldErrors, "title")}
-            />
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-zinc-300">
-                Review
-              </span>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                rows={5}
-                maxLength={200}
-                required
-                placeholder="Share your thoughts on this stock…"
-                className="w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900/60 px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20"
-              />
-              {fieldError(commentFieldErrors, "content") && (
-                <span className="mt-1 block text-xs text-red-400">
-                  {fieldError(commentFieldErrors, "content")}
-                </span>
-              )}
-            </label>
-            <Button type="submit" loading={posting}>
-              Post review
-            </Button>
+          <CommentForm
+            symbol={stock.symbol ?? undefined}
+            onSaved={onCommentSaved}
+          />
             <Link
               href={`/stocks/${stock.id}/edit`}
               className="inline-flex items-center justify-center gap-1 text-xs text-zinc-500 transition-colors hover:text-zinc-300"
@@ -565,7 +464,6 @@ export default function StockDetailPage() {
               <ArrowUpRight size={12} />
               Reviewing in the wrong place? Edit stock info
             </Link>
-          </form>
         </Card>
       </div>
     </div>

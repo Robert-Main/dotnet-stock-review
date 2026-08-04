@@ -43,6 +43,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export function Input({ label, error, className = "", id, ...props }: InputProps) {
+  const errorId = error && id ? `${id}-error` : undefined;
   return (
     <label className="block" htmlFor={id}>
       {label && (
@@ -52,12 +53,18 @@ export function Input({ label, error, className = "", id, ...props }: InputProps
       )}
       <input
         id={id}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={errorId}
         className={`w-full rounded-lg border bg-zinc-900/60 px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 outline-none transition-colors focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 ${
           error ? "border-red-500/60" : "border-zinc-800"
         } ${className}`}
         {...props}
       />
-      {error && <span className="mt-1 block text-xs text-red-400">{error}</span>}
+      {error && (
+        <span id={errorId} className="mt-1 block text-xs text-red-400">
+          {error}
+        </span>
+      )}
     </label>
   );
 }

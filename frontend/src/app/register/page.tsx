@@ -1,53 +1,60 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TrendingUp } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
-import { fieldError, fieldErrorsMatchAny } from "@/lib/formErrors";
+import { syncServerErrors, type ServerErrorSetter } from "@/lib/formErrors";
+import { registerSchema, type RegisterValues } from "@/lib/schemas";
 import { Button, Input } from "@/components/ui";
+import { useToast } from "@/components/Toast";
 
 export default function RegisterPage() {
-  const { register, isAuthenticated } = useAuth();
+  const toast = useToast();
+  const { register: registerUser, isAuthenticated } = useAuth();
   const router = useRouter();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] =
-    useState<ApiError["errors"]>(undefined);
-  const [submitting, setSubmitting] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { username: "", email: "", password: "", confirm: "" },
+  });
 
   useEffect(() => {
     if (isAuthenticated) router.replace("/");
   }, [isAuthenticated, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setFieldErrors(undefined);
-
-    if (password !== confirm) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    setSubmitting(true);
+  const onSubmit = async (values: RegisterValues) => {
+    setBanner(null);
     try {
-      await register(username, email, password);
+      await registerUser(values.username, values.email, values.password);
+      toast.success("Account created — welcome aboard!");
       router.push("/");
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message);
-        setFieldErrors(err.errors);
+        const fieldMsg = syncServerErrors(
+          err.errors,
+          setError as unknown as ServerErrorSetter,
+          ["username", "email", "password"]
+        );
+        if (fieldMsg) {
+          toast.error(fieldMsg);
+        } else {
+          toast.error(err.message);
+          setBanner(err.message);
+        }
       } else {
-        setError("Something went wrong. Try again.");
+        toast.error("Something went wrong. Try again.");
+        setBanner("Something went wrong. Try again.");
       }
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -66,58 +73,51 @@ export default function RegisterPage() {
       </div>
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
+        noValidate
         className="rise-in flex flex-col gap-5 rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-6 backdrop-blur-sm"
       >
-        {error &&
-          !fieldErrorsMatchAny(fieldErrors, ["username", "email", "password"]) && (
+        {banner && (
           <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            {error}
+            {banner}
           </div>
         )}
         <Input
           id="username"
           label="Username"
-          required
           autoComplete="username"
           placeholder="stocknerd"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          error={fieldError(fieldErrors, "username")}
+          error={errors.username?.message}
+          {...register("username")}
         />
         <Input
           id="email"
           label="Email"
           type="email"
-          required
           autoComplete="email"
           placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          error={fieldError(fieldErrors, "email")}
+          error={errors.email?.message}
+          {...register("email")}
         />
         <Input
           id="password"
           label="Password"
           type="password"
-          required
           autoComplete="new-password"
           placeholder="At least 6 chars, incl. a digit, upper & symbol"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          error={fieldError(fieldErrors, "password")}
+          error={errors.password?.message}
+          {...register("password")}
         />
         <Input
           id="confirm"
           label="Confirm password"
           type="password"
-          required
           autoComplete="new-password"
           placeholder="Repeat your password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
+          error={errors.confirm?.message}
+          {...register("confirm")}
         />
-        <Button type="submit" loading={submitting} className="w-full py-2.5">
+        <Button type="submit" loading={isSubmitting} className="w-full py-2.5">
           Create account
         </Button>
         <p className="text-center text-sm text-zinc-500">

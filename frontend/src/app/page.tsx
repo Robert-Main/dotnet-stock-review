@@ -19,6 +19,7 @@ import { formatCompact, formatCurrency } from "@/lib/format";
 import { Button, Card, EmptyState, Spinner } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
 import { useToast } from "@/components/Toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const PAGE_SIZE = 9;
 
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const [inPortfolio, setInPortfolio] = useState<Set<string>>(new Set());
   const [busySymbols, setBusySymbols] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<StockDto | null>(null);
 
   const [quotes, setQuotes] = useState<Map<string, LiveQuote>>(new Map());
   const [quotesLoading, setQuotesLoading] = useState(false);
@@ -180,11 +182,12 @@ export default function DashboardPage() {
     }
   };
 
-  const deleteStock = async (stock: StockDto) => {
-    if (!confirm(`Delete ${stock.symbol}? This cannot be undone.`)) return;
+const deleteStock = async (stock: StockDto) => {
     setDeleting(stock.id);
     try {
       await stockService.remove(stock.id);
+      toast.success(`${stock.symbol} deleted.`);
+      setPendingDelete(null);
       await fetchStocks();
     } catch (err) {
       toast.error(
@@ -377,7 +380,7 @@ export default function DashboardPage() {
                       {busy ? "…" : inP ? "In portfolio" : "Track"}
                     </button>
                     <button
-                      onClick={() => deleteStock(stock)}
+                      onClick={() => setPendingDelete(stock)}
                       disabled={deleting === stock.id}
                       title="Delete stock"
                       className="rounded-lg border border-zinc-800 p-1.5 text-zinc-500 transition-colors hover:border-red-500/40 hover:text-red-400 disabled:opacity-50"
@@ -419,6 +422,27 @@ export default function DashboardPage() {
           </Button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete ${pendingDelete?.symbol ?? ""}?`}
+        message={
+          pendingDelete && (
+            <>
+              <span className="font-mono font-semibold text-zinc-200">
+                {pendingDelete.symbol?.toUpperCase()}
+              </span>{" "}
+              ({pendingDelete.companyName}) will be permanently removed from the
+              markets. This cannot be undone.
+            </>
+          )
+        }
+        confirmLabel="Delete stock"
+        onConfirm={() =>
+          pendingDelete ? deleteStock(pendingDelete) : Promise.resolve()
+        }
+        onClose={() => setPendingDelete(null)}
+      />
     </div>
     </RequireAuth>
   );
