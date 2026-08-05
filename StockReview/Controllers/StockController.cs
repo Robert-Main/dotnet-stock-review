@@ -83,6 +83,90 @@ namespace StockReview.Controllers
             });
         }
 
+        // Live-market search for the "Add from live market" picker. Runs
+        // against the bundled PopularStocks index (FMP's own search endpoints
+        // are paid-tier on the free key). The index is stocks-only, so no
+        // type filtering or dedupe is needed.
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchLiveStocks([FromQuery] string query, [FromQuery] int limit = 8)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return BadRequest(ApiResponse.Error("Query is required."));
+            }
+
+            var hits = await _fmpService.SearchStocksAsync(query, limit);
+            var stocks = hits
+                .Select(h => new
+                {
+                    h.symbol,
+                    h.name,
+                    h.exchange,
+                    h.exchangeShortName
+                })
+                .ToList();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Live stocks retrieved successfully",
+                data = stocks
+            });
+        }
+
+        // Add a stock straight from live FMP data (quote-backed), skipping the
+        // manual form entirely. Idempotent: if the symbol already exists it is
+        // returned untouched so the UI can navigate to it instead of creating a
+        // duplicate.
+        [HttpPost("from-live")]
+        public async Task<IActionResult> AddFromLive([FromBody] FromLiveDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ApiResponse.FromModelState(ModelState));
+            }
+
+            var symbol = dto.Symbol.Trim().ToUpperInvariant();
+            var existing = await _stockRepository.GetStockBySymbolAsync(symbol);
+            if (existing != null)
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = $"{symbol} is already on the platform",
+                    created = false,
+                    stock = existing.MapToStockDtos()
+                });
+            }
+
+            var live = await _fmpService.FindStockBySymbolAsync(symbol);
+            if (live == null)
+            {
+                return NotFound(ApiResponse.Error($"No live data found for symbol '{symbol}'."));
+            }
+
+            var createStock = new CreateStock
+            {
+                Symbol = live.Symbol.ToUpperInvariant(),
+                CompanyName = live.CompanyName,
+                Purchase = live.Purchase,
+                Divided = live.Divided,
+                LastDiv = live.LastDiv,
+                Industry = live.Industry,
+                MarketCap = live.MarketCap,
+                Sector = "Unknown"
+            };
+
+            var created = await _stockRepository.AddStockAsync(createStock);
+            return Ok(new
+            {
+                success = true,
+                message = $"{created.Symbol} added from the live market",
+                created = true,
+                stock = created.MapToStockDtos()
+            });
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetStocks([FromQuery] QueryObject query)
         {

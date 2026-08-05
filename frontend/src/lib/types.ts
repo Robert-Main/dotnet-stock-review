@@ -133,3 +133,26 @@ export interface StockHistoryResponse {
   message: string;
   data: PricePoint[];
 }
+
+// One hit from GET /api/stock/search — the live FMP market universe.
+export interface LiveStockHit {
+  symbol: string;
+  name: string | null;
+  exchange: string | null;
+  exchangeShortName: string | null;
+}
+
+export interface LiveStockSearchResponse {
+  success: boolean;
+  message: string;
+  data: LiveStockHit[];
+}
+
+// Response of POST /api/stock/from-live — `created` is false when the symbol
+// already existed locally, so the UI navigates instead of duplicating.
+export interface StockFromLiveResponse {
+  success: boolean;
+  message: string;
+  created: boolean;
+  stock: StockDto;
+}

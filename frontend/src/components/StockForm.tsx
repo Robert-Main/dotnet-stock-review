@@ -15,6 +15,7 @@ import {
 } from "@/lib/schemas";
 import { Button, Card, Input } from "@/components/ui";
 import { useToast } from "@/components/Toast";
+import LiveMarketPicker from "@/components/LiveMarketPicker";
 
 interface StockFormProps {
   mode: "create" | "edit";
@@ -140,6 +141,19 @@ export default function StockForm({ mode, initial }: StockFormProps) {
           ? "Register a new stock on the platform."
           : "Update this stock's fundamentals."}
       </p>
+
+      {mode === "create" && (
+        <div className="mt-6">
+          <LiveMarketPicker />
+          <div className="my-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-zinc-800" />
+            <span className="text-xs font-medium uppercase tracking-wider text-zinc-600">
+              or add manually
+            </span>
+            <div className="h-px flex-1 bg-zinc-800" />
+          </div>
+        </div>
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}

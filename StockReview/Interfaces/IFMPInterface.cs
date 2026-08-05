@@ -12,5 +12,6 @@ namespace StockReview.Interfaces
         Task<Stock> FindStockBySymbolAsync(string symbol);
         Task<FMPQuote> GetQuoteAsync(string symbol);
         Task<List<FMPHistoryPoint>> GetHistoricalPricesAsync(string symbol, int days);
+        Task<List<FMPStockSearchResult>> SearchStocksAsync(string query, int limit);
     }
 }

@@ -2,9 +2,11 @@ import { request } from "@/lib/api";
 import type {
   CreateStockPayload,
   LiveQuotesResponse,
+  LiveStockSearchResponse,
   MessageResponse,
   StockDetailResponse,
   StockDto,
+  StockFromLiveResponse,
   StockHistoryResponse,
   StockListQuery,
   StockListResponse,
@@ -48,4 +50,14 @@ export const stockService = {
     request<StockHistoryResponse>(
       `/api/stock/history/${encodeURIComponent(symbol)}?days=${days}`
     ),
+  searchLive: (query: string, signal?: AbortSignal) =>
+    request<LiveStockSearchResponse>(
+      `/api/stock/search?query=${encodeURIComponent(query)}&limit=8`,
+      { signal }
+    ),
+  addFromLive: (symbol: string) =>
+    request<StockFromLiveResponse>("/api/stock/from-live", {
+      method: "POST",
+      body: JSON.stringify({ symbol }),
+    }),
 };

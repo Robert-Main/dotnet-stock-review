@@ -10,6 +10,7 @@ import {
   Plus,
   Search,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import { ApiError } from "@/lib/api";
 import { stockService } from "@/services/stockService";
@@ -270,16 +271,28 @@ const deleteStock = async (stock: StockDto) => {
       {loading ? (
         <Spinner />
       ) : stocks.length === 0 ? (
-        <Card>
+        <Card className="pb-6">
           <EmptyState
             icon={<Search size={24} />}
             title="No stocks found"
             description={
-              search
-                ? "Try a different search term, or add a stock to get started."
+              search && !error
+                ? "It's not on the platform yet — but you can add it straight from the live market."
                 : "Add your first stock to start reviewing."
             }
           />
+          {!error && search && (
+            <div className="flex justify-center px-6">
+              <Link
+                href={`/stocks/new?symbol=${encodeURIComponent(search.trim())}`}
+              >
+                <Button>
+                  <TrendingUp size={16} />
+                  Add {search.trim().toUpperCase()} from the live market
+                </Button>
+              </Link>
+            </div>
+          )}
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

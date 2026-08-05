@@ -21,4 +21,15 @@ namespace api.Dtos.Stock
         public string date { get; set; }
         public double price { get; set; }
     }
+
+    // One hit from the FMP "/stable/search" endpoint — the live-market
+    // universe used by the "Add from live market" picker.
+    public class FMPStockSearchResult
+    {
+        public string symbol { get; set; }
+        public string name { get; set; }
+        public string exchange { get; set; }
+        public string exchangeShortName { get; set; }
+        public string type { get; set; }
+    }
 }

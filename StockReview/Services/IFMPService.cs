@@ -119,5 +119,46 @@ namespace StockReview.Services
             PruneExpired();
             return sliced;
         }
+
+        public Task<List<FMPStockSearchResult>> SearchStocksAsync(string query, int limit)
+        {
+            // FMP's /stable/search and /stable/symbol/available-list are
+            // paid-tier (return [] on the free key), so search runs against
+            // the bundled PopularStocks index. Exact symbols not in the index
+            // are still addable via POST /api/stock/from-live, which validates
+            // against the free quote endpoint.
+            var q = query?.Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(q)) return Task.FromResult(new List<FMPStockSearchResult>());
+            if (limit < 1) limit = 1;
+            if (limit > 20) limit = 20;
+
+            var scored = new List<(FMPStockSearchResult Hit, int Score)>();
+            foreach (var s in PopularStocks.All)
+            {
+                if (s.symbol == q)
+                {
+                    scored.Add((s, 4));
+                    continue;
+                }
+
+                var nameUpper = s.name.ToUpperInvariant();
+                var score = 0;
+                if (s.symbol.StartsWith(q, StringComparison.Ordinal)) score = 3;
+                else if (nameUpper.StartsWith(q, StringComparison.Ordinal)) score = 2;
+                // Name-contains matches are gated to >= 3 chars so common
+                // substrings like "co" or "in" don't flood the dropdown with
+                // alphabetical ties.
+                else if (q.Length >= 3 && nameUpper.Contains(q, StringComparison.Ordinal)) score = 1;
+                if (score > 0) scored.Add((s, score));
+            }
+
+            return Task.FromResult(
+                scored
+                    .OrderByDescending(x => x.Score)
+                    .ThenBy(x => x.Hit.symbol, StringComparer.Ordinal)
+                    .Take(limit)
+                    .Select(x => x.Hit)
+                    .ToList());
+        }
     }
 }
