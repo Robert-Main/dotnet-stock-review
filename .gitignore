@@ -1,0 +1,17 @@
+# Ignore runtime and editor artifacts
+.freebuff/
+StockReview/.freebuff/
+StockReview/obj/
+StockReview/bin/
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+.env
+
+# Node and build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/tsconfig.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
