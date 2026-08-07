@@ -1,0 +1,176 @@
+
+> frontend@0.1.0 dev
+> next dev --port 3000
+
+▲ Next.js 16.2.12 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.100.4:3000
+- Environments: .env.local
+✓ Ready in 1447ms
+
+○ Compiling /login ...
+ GET /login 200 in 7.0s (next.js: 6.6s, application-code: 362ms)
+ GET / 200 in 644ms (next.js: 487ms, application-code: 157ms)
+ GET / 200 in 77ms (next.js: 6ms, application-code: 71ms)
+ GET / 200 in 105ms (next.js: 10ms, application-code: 95ms)
+ GET /login 200 in 114ms (next.js: 7ms, application-code: 107ms)
+ GET / 200 in 56ms (next.js: 9ms, application-code: 47ms)
+ GET /stocks/1 200 in 1929ms (next.js: 1743ms, application-code: 186ms)
+ GET /login 200 in 29ms (next.js: 5ms, application-code: 25ms)
+ GET / 200 in 93ms (next.js: 6ms, application-code: 87ms)
+ GET / 200 in 66ms (next.js: 10ms, application-code: 55ms)
+✓ Compiled in 1364ms
+ GET / 200 in 591ms (next.js: 289ms, application-code: 301ms)
+ GET / 200 in 197ms (next.js: 17ms, application-code: 181ms)
+ GET / 200 in 112ms (next.js: 13ms, application-code: 99ms)
+✓ Compiled in 230ms
+ GET / 200 in 376ms (next.js: 162ms, application-code: 215ms)
+ GET / 200 in 133ms (next.js: 14ms, application-code: 119ms)
+ GET / 200 in 68ms (next.js: 9ms, application-code: 59ms)
+✓ Compiled in 65ms
+ GET / 200 in 259ms (next.js: 146ms, application-code: 112ms)
+ GET / 200 in 47ms (next.js: 5ms, application-code: 42ms)
+✓ Compiled in 160ms
+✓ Compiled in 0ms
+ GET / 200 in 503ms (next.js: 152ms, application-code: 352ms)
+ GET / 200 in 218ms (next.js: 8ms, application-code: 210ms)
+ GET / 200 in 163ms (next.js: 9ms, application-code: 154ms)
+ GET / 200 in 164ms (next.js: 70ms, application-code: 94ms)
+✓ Compiled in 108ms
+ GET / 200 in 291ms (next.js: 127ms, application-code: 163ms)
+ GET / 200 in 69ms (next.js: 7ms, application-code: 62ms)
+✓ Compiled in 58ms
+ GET / 200 in 228ms (next.js: 113ms, application-code: 115ms)
+ GET / 200 in 53ms (next.js: 5ms, application-code: 48ms)
+✓ Compiled in 123ms
+ GET / 200 in 533ms (next.js: 150ms, application-code: 383ms)
+ GET / 200 in 290ms (next.js: 9ms, application-code: 281ms)
+ GET / 200 in 194ms (next.js: 16ms, application-code: 178ms)
+ GET / 200 in 191ms (next.js: 78ms, application-code: 113ms)
+ GET / 200 in 368ms (next.js: 6ms, application-code: 363ms)
+ GET / 200 in 99ms (next.js: 6ms, application-code: 94ms)
+ GET /register 200 in 1622ms (next.js: 1188ms, application-code: 434ms)
+ GET / 200 in 48ms (next.js: 8ms, application-code: 41ms)
+ GET /login 200 in 259ms (next.js: 196ms, application-code: 63ms)
+ GET /login 200 in 41ms (next.js: 6ms, application-code: 35ms)
+ GET /register 200 in 54ms (next.js: 3ms, application-code: 51ms)
+✓ Compiled in 91ms
+✓ Compiled in 415ms
+✓ Compiled in 302ms
+ GET / 200 in 1581ms (next.js: 374ms, application-code: 1207ms)
+ GET /register 200 in 1585ms (next.js: 681ms, application-code: 904ms)
+ GET / 200 in 501ms (next.js: 44ms, application-code: 457ms)
+ GET /register 200 in 494ms (next.js: 336ms, application-code: 158ms)
+✓ Compiled in 65ms
+ GET / 200 in 907ms (next.js: 617ms, application-code: 290ms)
+ GET /register 200 in 914ms (next.js: 778ms, application-code: 136ms)
+✓ Compiled in 120ms
+ GET / 200 in 407ms (next.js: 102ms, application-code: 305ms)
+ GET /register 200 in 408ms (next.js: 167ms, application-code: 242ms)
+ GET / 200 in 206ms (next.js: 6ms, application-code: 200ms)
+ GET /register 200 in 167ms (next.js: 21ms, application-code: 146ms)
+ GET / 200 in 106ms (next.js: 7ms, application-code: 99ms)
+ GET /register 200 in 67ms (next.js: 7ms, application-code: 60ms)
+✓ Compiled in 102ms
+ GET / 200 in 1236ms (next.js: 938ms, application-code: 297ms)
+ GET /register 200 in 1238ms (next.js: 374ms, application-code: 865ms)
+ GET /register 200 in 151ms (next.js: 22ms, application-code: 129ms)
+ GET / 200 in 81ms (next.js: 11ms, application-code: 69ms)
+✓ Compiled in 73ms
+ GET / 200 in 981ms (next.js: 628ms, application-code: 353ms)
+ GET /register 200 in 992ms (next.js: 749ms, application-code: 243ms)
+ GET / 200 in 165ms (next.js: 13ms, application-code: 152ms)
+ GET /register 200 in 109ms (next.js: 20ms, application-code: 90ms)
+ GET /login 200 in 539ms (next.js: 34ms, application-code: 506ms)
+ GET / 200 in 34ms (next.js: 5ms, application-code: 29ms)
+ GET / 200 in 41ms (next.js: 6ms, application-code: 35ms)
+ GET / 200 in 71ms (next.js: 6ms, application-code: 65ms)
+✓ Compiled in 92ms
+⚠ Fast Refresh had to perform a full reload when ./src/components/Toast.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload when ./src/components/Toast.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET / 200 in 729ms (next.js: 232ms, application-code: 497ms)
+ GET / 200 in 392ms (next.js: 12ms, application-code: 380ms)
+ GET / 200 in 441ms (next.js: 60ms, application-code: 381ms)
+ GET / 200 in 407ms (next.js: 225ms, application-code: 182ms)
+ GET /stocks/new 200 in 511ms (next.js: 462ms, application-code: 49ms)
+ GET /stocks/2004 200 in 190ms (next.js: 140ms, application-code: 50ms)
+ GET / 200 in 24ms (next.js: 4ms, application-code: 20ms)
+ GET / 200 in 50ms (next.js: 4ms, application-code: 46ms)
+ GET / 200 in 47ms (next.js: 3ms, application-code: 44ms)
+✓ Compiled in 74ms
+ GET / 200 in 899ms (next.js: 460ms, application-code: 439ms)
+ GET / 200 in 899ms (next.js: 600ms, application-code: 299ms)
+ GET / 200 in 246ms (next.js: 10ms, application-code: 236ms)
+ GET / 200 in 194ms (next.js: 10ms, application-code: 184ms)
+ GET / 200 in 135ms (next.js: 9ms, application-code: 126ms)
+ GET / 200 in 82ms (next.js: 10ms, application-code: 72ms)
+✓ Compiled in 140ms
+✓ Compiled in 218ms
+ GET / 200 in 721ms (next.js: 158ms, application-code: 562ms)
+ GET / 200 in 721ms (next.js: 273ms, application-code: 448ms)
+ GET / 200 in 360ms (next.js: 9ms, application-code: 351ms)
+ GET / 200 in 279ms (next.js: 13ms, application-code: 266ms)
+ GET / 200 in 198ms (next.js: 15ms, application-code: 183ms)
+ GET / 200 in 203ms (next.js: 93ms, application-code: 110ms)
+ GET /stocks/new 200 in 228ms (next.js: 135ms, application-code: 93ms)
+✓ Compiled in 43ms
+ GET / 200 in 250ms (next.js: 212ms, application-code: 37ms)
+ GET /stocks/new 200 in 253ms (next.js: 143ms, application-code: 110ms)
+✓ Compiled in 64ms
+ GET / 200 in 608ms (next.js: 178ms, application-code: 431ms)
+ GET /stocks/new 200 in 341ms (next.js: 261ms, application-code: 80ms)
+ GET /stocks/new 200 in 269ms (next.js: 4ms, application-code: 265ms)
+✓ Compiled in 67ms
+ GET /stocks/new 200 in 353ms (next.js: 297ms, application-code: 56ms)
+ GET /stocks/new 200 in 356ms (next.js: 207ms, application-code: 149ms)
+ GET /stocks/new 200 in 207ms (next.js: 7ms, application-code: 200ms)
+ GET /stocks/2006 200 in 495ms (next.js: 380ms, application-code: 115ms)
+ GET / 200 in 184ms (next.js: 18ms, application-code: 166ms)
+ GET /stocks/2007 200 in 52ms (next.js: 16ms, application-code: 36ms)
+ GET / 200 in 28ms (next.js: 5ms, application-code: 23ms)
+ GET /stocks/new 200 in 33ms (next.js: 3ms, application-code: 30ms)
+ GET /stocks/2008 200 in 193ms (next.js: 45ms, application-code: 147ms)
+ GET / 200 in 49ms (next.js: 7ms, application-code: 42ms)
+✓ Compiled in 74ms
+ GET / 200 in 311ms (next.js: 140ms, application-code: 171ms)
+ GET / 200 in 313ms (next.js: 250ms, application-code: 63ms)
+ GET /stocks/new 200 in 174ms (next.js: 123ms, application-code: 51ms)
+ GET / 200 in 20ms (next.js: 3ms, application-code: 16ms)
+ GET /stocks/2008 200 in 48ms (next.js: 27ms, application-code: 22ms)
+ GET / 200 in 19ms (next.js: 3ms, application-code: 15ms)
+ GET /login 200 in 154ms (next.js: 114ms, application-code: 40ms)
+ GET / 200 in 23ms (next.js: 4ms, application-code: 20ms)
+ GET / 200 in 20ms (next.js: 3ms, application-code: 17ms)
+ GET /portfolio 200 in 512ms (next.js: 477ms, application-code: 35ms)
+ GET / 200 in 20ms (next.js: 3ms, application-code: 17ms)
+ GET /stocks/new 200 in 25ms (next.js: 3ms, application-code: 22ms)
+ GET /stocks/2009 200 in 39ms (next.js: 14ms, application-code: 26ms)
+ GET / 200 in 22ms (next.js: 5ms, application-code: 17ms)
+ GET /stocks/new 200 in 319ms (next.js: 7ms, application-code: 311ms)
+✓ Compiled in 51ms
+ GET / 200 in 421ms (next.js: 107ms, application-code: 313ms)
+ GET /stocks/new 200 in 423ms (next.js: 331ms, application-code: 92ms)
+✓ Compiled in 93ms
+ GET / 200 in 443ms (next.js: 263ms, application-code: 180ms)
+ GET /stocks/new 200 in 445ms (next.js: 362ms, application-code: 83ms)
+ GET / 200 in 131ms (next.js: 3ms, application-code: 128ms)
+ GET /stocks/new?symbol=orcl 200 in 37ms (next.js: 4ms, application-code: 33ms)
+✓ Compiled in 61ms
+ GET / 200 in 529ms (next.js: 128ms, application-code: 401ms)
+ GET /stocks/new?symbol=orcl 200 in 337ms (next.js: 249ms, application-code: 89ms)
+ GET /stocks/new?symbol=orcl 200 in 363ms (next.js: 3ms, application-code: 360ms)
+ GET / 200 in 77ms (next.js: 5ms, application-code: 72ms)
+ GET /stocks/new?symbol=amzn 200 in 41ms (next.js: 5ms, application-code: 36ms)
+ GET /stocks/2011 200 in 77ms (next.js: 35ms, application-code: 42ms)
+✓ Compiled in 103ms
+ GET / 200 in 767ms (next.js: 313ms, application-code: 454ms)
+ GET / 200 in 201ms (next.js: 15ms, application-code: 186ms)
+ GET /stocks/2011 200 in 350ms (next.js: 66ms, application-code: 283ms)
+ GET /stocks/2011 200 in 97ms (next.js: 12ms, application-code: 85ms)
+ GET /stocks/new 200 in 281ms (next.js: 121ms, application-code: 160ms)
+ GET /stocks/new?symbol=tsla 200 in 74ms (next.js: 5ms, application-code: 69ms)
+ GET /stocks/new 200 in 152ms (next.js: 67ms, application-code: 85ms)
+ GET / 200 in 52ms (next.js: 18ms, application-code: 34ms)
+ GET /login 200 in 104ms (next.js: 44ms, application-code: 60ms)
+ GET / 200 in 26ms (next.js: 5ms, application-code: 22ms)
+ GET /login 200 in 48ms (next.js: 9ms, application-code: 39ms)

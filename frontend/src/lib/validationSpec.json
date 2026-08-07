@@ -1,0 +1,39 @@
+{
+  "//": "Single source of truth for form validation. Keys are the .NET DTO property names (PascalCase) so this can be diffed against the [DataAnnotations] in StockReview/Dtos via scripts/verify-dto-parity.mjs. The parity test enforces: every backend rule must be enforced here at least as strictly (frontend extras like pattern/minLength are allowed and marked below).",
+  "LoginDto": {
+    "Email": { "required": true, "email": true },
+    "Password": { "required": true }
+  },
+  "RegisterDto": {
+    "Username": { "required": true, "minLength": 3, "maxLength": 50 },
+    "Email": { "required": true, "email": true },
+    "Password": { "required": true, "minLength": 6 }
+  },
+  "CreateStock": {
+    "Symbol": { "required": true, "maxLength": 10, "pattern": "^[A-Za-z0-9.-]+$" },
+    "CompanyName": { "required": true, "maxLength": 100 },
+    "Purchase": { "required": true, "numeric": true, "min": 0 },
+    "Divided": { "required": true, "numeric": true, "min": 0 },
+    "LastDiv": { "required": true, "numeric": true, "min": 0 },
+    "Industry": { "required": true, "maxLength": 100 },
+    "Sector": { "required": true, "maxLength": 100 },
+    "MarketCap": { "required": true, "numeric": true, "min": 0 }
+  },
+  "UpdateStock": {
+    "Symbol": { "required": true, "maxLength": 10, "pattern": "^[A-Za-z0-9.-]+$" },
+    "CompanyName": { "required": true, "maxLength": 100 },
+    "Purchase": { "required": true, "numeric": true, "min": 0 },
+    "Divided": { "required": true, "numeric": true, "min": 0 },
+    "LastDiv": { "required": true, "numeric": true, "min": 0 },
+    "Industry": { "required": true, "maxLength": 100 },
+    "MarketCap": { "required": true, "numeric": true, "min": 0 }
+  },
+  "CreateCommentDto": {
+    "Title": { "required": true, "minLength": 1, "maxLength": 100 },
+    "Content": { "required": true, "minLength": 1, "maxLength": 200 }
+  },
+  "UpdateCommentDto": {
+    "Title": { "required": true, "minLength": 1, "maxLength": 100 },
+    "Content": { "required": true, "minLength": 1, "maxLength": 200 }
+  }
+}

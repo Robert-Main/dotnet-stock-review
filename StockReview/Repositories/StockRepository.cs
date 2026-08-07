@@ -28,15 +28,17 @@ namespace StockReview.Repositories
                 .AsQueryable();
 
             var symbol = query.Symbol;
-            if (!string.IsNullOrEmpty(symbol))
-            {
-                stocks = stocks.Where(s => s.Symbol != null && s.Symbol.Contains(symbol));
-            }
-
             var companyName = query.CompanyName;
-            if (!string.IsNullOrEmpty(companyName))
+
+            // The frontend uses one search box that sends the same term as both
+            // Symbol and CompanyName, so the filters must be ORed (match either
+            // field), not ANDed. Each clause only contributes when its param is
+            // non-empty — an empty param must NOT short-circuit the whole row.
+            if (!string.IsNullOrEmpty(symbol) || !string.IsNullOrEmpty(companyName))
             {
-                stocks = stocks.Where(s => s.CompanyName != null && s.CompanyName.Contains(companyName));
+                stocks = stocks.Where(s =>
+                    (!string.IsNullOrEmpty(symbol) && s.Symbol != null && s.Symbol.Contains(symbol)) ||
+                    (!string.IsNullOrEmpty(companyName) && s.CompanyName != null && s.CompanyName.Contains(companyName)));
             }
 
             if (!string.IsNullOrEmpty(query.SortBy))

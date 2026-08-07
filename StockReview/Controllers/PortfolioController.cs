@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using StockReview.Dtos.Stock;
+using StockReview.Helpers;
 using StockReview.Interfaces;
 using StockReview.Models;
 using StockReview.Repositories;
@@ -40,14 +41,16 @@ namespace StockReview.Controllers
 
             if (user == null)
             {
-                return Unauthorized();
+                return Unauthorized(ApiResponse.Error("Authenticated user is required."));
             }
 
             var portfolio = await _portfolioInterface.GetUserPortfolioAsync(user);
             return Ok(portfolio);
         }
 
-        [HttpPost("add/{symbol:alpha}")]
+        // Ticker symbols may contain letters, digits, dots (BRK.B) or hyphens,
+        // so use a regex constraint instead of the letters-only "alpha".
+        [HttpPost("add/{symbol:regex(^[[A-Za-z0-9.\\-]]+$)}")]
         public async Task<IActionResult> AddToPortfolio([FromRoute] string symbol)
         {
             var username = User.GetUserName();
@@ -55,12 +58,12 @@ namespace StockReview.Controllers
 
             if (user == null)
             {
-                return Unauthorized();
+                return Unauthorized(ApiResponse.Error("Authenticated user is required."));
             }
 
             if (string.IsNullOrWhiteSpace(symbol))
             {
-                return BadRequest("Symbol is required.");
+                return BadRequest(ApiResponse.Error("Symbol is required."));
             }
 
             var stock = await _stockRepository.GetStockBySymbolAsync(symbol);
@@ -69,7 +72,7 @@ namespace StockReview.Controllers
                 stock = await _iFMPService.FindStockBySymbolAsync(symbol);
                 if (stock == null)
                 {
-                    return BadRequest("Stock does not exist.");
+                    return BadRequest(ApiResponse.Error("Stock does not exist."));
                 }
 
                 var createStock = new StockReview.Dtos.Stock.CreateStock
@@ -96,7 +99,7 @@ namespace StockReview.Controllers
             var createdPortfolio = await _portfolioInterface.CreatePortfolioAsync(portfolioModel);
             if (createdPortfolio == null)
             {
-                return StatusCode(500, "Could not create portfolio item.");
+                return StatusCode(500, ApiResponse.Error("Could not create portfolio item."));
             }
 
             return Ok(new
@@ -122,7 +125,7 @@ namespace StockReview.Controllers
             }
             else
             {
-                return BadRequest("Stock not in your portfolio");
+                return BadRequest(ApiResponse.Error("Stock not in your portfolio"));
             }
             return Ok(
                 new

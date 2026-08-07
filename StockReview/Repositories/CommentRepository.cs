@@ -66,6 +66,13 @@ namespace StockReview.Repositories
                 .FirstOrDefaultAsync();
         }
 
+        // Raw entity with AppUserId populated (no Include needed — it's a
+        // scalar FK column on the row), used for ownership checks.
+        public Task<Comment?> GetCommentEntityByIdAsync(int id)
+        {
+            return _context.Comments.FirstOrDefaultAsync(c => c.Id == id);
+        }
+
         public async Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto, string appUserId)
         {
             var comment = CommentMappers.MapToCreateComment(createCommentDto);
