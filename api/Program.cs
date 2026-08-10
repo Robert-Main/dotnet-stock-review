@@ -30,11 +30,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddCors(options =>
 {
+    // Read allowed origins from configuration (or env var) so production
+    // domains can be injected by the host (Vercel/Render) without code changes.
+    // Format: a semicolon-separated list, e.g.
+    // AllowedOrigins="http://localhost:3000;https://your-vercel-app.vercel.app"
+    var allowed = builder.Configuration["AllowedOrigins"] ?? "http://localhost:3000;https://localhost:3000";
+    var origins = allowed.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     options.AddPolicy("AllowNextJs", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.WithOrigins(origins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 builder.Services.AddScoped<IStockRepository, StockRepository>();
@@ -99,7 +106,9 @@ app.UseExceptionHandler(errorApp =>
         // same origins the AllowNextJs policy allows — otherwise the browser
         // blocks reading the error body on cross-origin requests.
         var origin = context.Request.Headers["Origin"].ToString();
-        if (origin == "http://localhost:3000" || origin == "https://localhost:3000")
+        var allowed = builder.Configuration["AllowedOrigins"] ?? "http://localhost:3000;https://localhost:3000";
+        var allowedOrigins = allowed.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (!string.IsNullOrEmpty(origin) && allowedOrigins.Contains(origin))
         {
             context.Response.Headers["Access-Control-Allow-Origin"] = origin;
             context.Response.Headers["Vary"] = "Origin";
