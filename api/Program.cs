@@ -14,6 +14,18 @@ using StockReview.Services;
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
+{
+    config.Sources.Clear();
+    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+    config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: false);
+    config.AddEnvironmentVariables();
+    if (args is not null)
+    {
+        config.AddCommandLine(args);
+    }
+});
+
 builder.Services.AddOpenApi();
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
