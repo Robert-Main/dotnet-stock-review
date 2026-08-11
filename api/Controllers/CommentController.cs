@@ -67,9 +67,6 @@ namespace StockReview.Controllers
                 data = comments
             });
         }
-
-        // Ticker symbols may contain letters, digits, dots (BRK.B) or hyphens,
-        // so use a regex constraint instead of the letters-only "alpha".
         [HttpPost]
         [Route("{symbol:regex(^[[A-Za-z0-9.\\-]]+$)}")]
         public async Task<IActionResult> Create([FromRoute] string symbol, [FromBody] CreateCommentDto createCommentDto)
@@ -109,7 +106,7 @@ namespace StockReview.Controllers
                     MarketCap = remoteStock.MarketCap,
                     Sector = "Unknown"
                 });
-                
+
             }
 
             createCommentDto.StockId = stock.Id;

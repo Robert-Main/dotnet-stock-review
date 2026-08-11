@@ -108,10 +108,6 @@ namespace StockReview.Controllers
             });
         }
 
-        // Add a stock straight from live FMP data (quote-backed), skipping the
-        // manual form entirely. Idempotent: if the symbol already exists it is
-        // returned untouched so the UI can navigate to it instead of creating a
-        // duplicate.
         [HttpPost("from-live")]
         public async Task<IActionResult> AddFromLive([FromBody] FromLiveDto dto)
         {

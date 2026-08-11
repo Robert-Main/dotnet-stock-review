@@ -48,8 +48,6 @@ namespace StockReview.Controllers
             return Ok(portfolio);
         }
 
-        // Ticker symbols may contain letters, digits, dots (BRK.B) or hyphens,
-        // so use a regex constraint instead of the letters-only "alpha".
         [HttpPost("add/{symbol:regex(^[[A-Za-z0-9.\\-]]+$)}")]
         public async Task<IActionResult> AddToPortfolio([FromRoute] string symbol)
         {
