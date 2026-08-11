@@ -50,8 +50,6 @@ export default function PortfolioPage() {
   }, [toast]);
 
   useEffect(() => {
-    // Async data fetch on mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

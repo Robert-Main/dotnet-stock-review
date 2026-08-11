@@ -29,9 +29,6 @@ namespace StockReview.Controllers
             _tokenService = tokenService;
         }
 
-        // No try/catch here on purpose: unhandled exceptions propagate to the
-        // global exception middleware, which logs them server-side and returns
-        // the canonical { success: false, message } 500 without leaking details.
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
         {
@@ -76,10 +73,6 @@ namespace StockReview.Controllers
             return BadRequest(ApiResponse.Error("Error creating user", MapIdentityErrors(result.Errors)));
         }
 
-        // Identity errors don't carry field names, but their codes identify the
-        // property they belong to (PasswordTooShort/DuplicateUserName/...). Map
-        // them into the field-keyed errors bag so the frontend can render
-        // messages under the right input instead of a single alert.
         private static Dictionary<string, string[]> MapIdentityErrors(IEnumerable<IdentityError> errors)
         {
             var bag = new Dictionary<string, List<string>>();

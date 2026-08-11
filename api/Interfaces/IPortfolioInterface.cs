@@ -10,7 +10,6 @@ namespace StockReview.Interfaces
     {
         public Task<List<Stock>> GetUserPortfolioAsync(AppUser user);
         public Task<Portfolio> CreatePortfolioAsync(Portfolio portfolio);
-        public Task<Portfolio> deletePortifolio(AppUser appUser,string symbol);
-
+        public Task<Portfolio> DeletePortfolioAsync(AppUser appUser, string symbol);
     }
 }

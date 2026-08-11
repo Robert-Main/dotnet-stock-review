@@ -31,10 +31,6 @@ builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 );
-// Disable the framework's automatic 400 (ProblemDetails {title,status,errors,
-// traceId}) so ModelState validation errors flow through ApiResponse and every
-// error body is the consistent { success, message, errors? } shape. Controllers
-// already check ModelState.IsValid explicitly.
 builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true
 );
@@ -42,10 +38,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddCors(options =>
 {
-    // Read allowed origins from configuration (or env var) so production
-    // domains can be injected by the host (Vercel/Render) without code changes.
-    // Format: a semicolon-separated list, e.g.
-    // AllowedOrigins="http://localhost:3000;https://your-vercel-app.vercel.app"
     var allowed = builder.Configuration["AllowedOrigins"] ?? "http://localhost:3000;https://localhost:3000";
     var origins = allowed.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     options.AddPolicy("AllowNextJs", policy =>
@@ -60,7 +52,7 @@ builder.Services.AddScoped<IStockRepository, StockRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPortfolioInterface, PortfolioRepository>();
-builder.Services.AddHttpClient<IFMPInterface,IFMPService>();
+builder.Services.AddHttpClient<IFMPInterface, IFMPService>();
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
@@ -98,10 +90,6 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
-
-// Global exception handler — must be FIRST so it wraps the whole pipeline.
-// Any unhandled exception becomes a canonical { success: false, message }
-// 500; the real exception is logged server-side, never sent to the client.
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -114,9 +102,6 @@ app.UseExceptionHandler(errorApp =>
         logger.LogError(exception, "Unhandled exception while processing {Method} {Path}",
             context.Request.Method, context.Request.Path);
 
-        // The handler clears the response, so re-apply the CORS header for the
-        // same origins the AllowNextJs policy allows — otherwise the browser
-        // blocks reading the error body on cross-origin requests.
         var origin = context.Request.Headers["Origin"].ToString();
         var allowed = builder.Configuration["AllowedOrigins"] ?? "http://localhost:3000;https://localhost:3000";
         var allowedOrigins = allowed.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

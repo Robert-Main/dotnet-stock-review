@@ -23,9 +23,6 @@ namespace StockReview.Controllers
             _fmpService = fmpService;
         }
 
-        // Live quotes for a comma-separated list of symbols ("AAPL,MSFT").
-        // Returns quotes that resolved; failures are skipped so a single bad
-        // symbol never breaks the whole dashboard.
         [HttpGet("live")]
         public async Task<IActionResult> GetLiveQuotes([FromQuery] string symbols)
         {
@@ -39,8 +36,6 @@ namespace StockReview.Controllers
                 .Take(20)
                 .ToList();
 
-            // Fetch all symbols in parallel — the FMP round-trip dominates
-            // latency, and a sequential loop would stall the dashboard.
             var fetched = await Task.WhenAll(list.Select(s => _fmpService.GetQuoteAsync(s)));
             var quotes = fetched
                 .Where(q => q != null)
@@ -65,7 +60,6 @@ namespace StockReview.Controllers
             });
         }
 
-        // Historical EOD prices (oldest-first) for a sparkline.
         [HttpGet("history/{symbol}")]
         public async Task<IActionResult> GetHistory([FromRoute] string symbol, [FromQuery] int days = 30)
         {

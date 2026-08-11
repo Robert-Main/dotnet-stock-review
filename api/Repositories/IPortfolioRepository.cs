@@ -24,10 +24,10 @@ namespace StockReview.Repositories
             return portfolio;
         }
 
-        public async Task<Portfolio> deletePortifolio(AppUser appUser ,string symbol)
+        public async Task<Portfolio> DeletePortfolioAsync(AppUser appUser, string symbol)
         {
-            var portfolios = await _context.Portfolios.FirstOrDefaultAsync(x => x.AppUserId==appUser.Id && x.Stock.Symbol.ToLower()== symbol.ToLower());
-            if(portfolios == null)
+            var portfolios = await _context.Portfolios.FirstOrDefaultAsync(x => x.AppUserId == appUser.Id && x.Stock.Symbol.ToLower() == symbol.ToLower());
+            if (portfolios == null)
             {
                 return null;
             }
@@ -51,6 +51,9 @@ namespace StockReview.Repositories
             }).ToListAsync();
         }
 
-
+        public async Task<Portfolio> GetPortfolioBySymbolAsync(AppUser user, string symbol)
+        {
+            return await _context.Portfolios.FirstOrDefaultAsync(p => p.AppUserId == user.Id && p.Stock.Symbol.ToLower() == symbol.ToLower());
+        }
     }
 }

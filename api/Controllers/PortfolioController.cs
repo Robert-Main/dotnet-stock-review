@@ -118,20 +118,21 @@ namespace StockReview.Controllers
 
             var userPortfolio = await _portfolioInterface.GetUserPortfolioAsync(appUser);
 
-            var fillteredStock =userPortfolio.Where(s=>s.Symbol.ToLower() ==symbol.ToLower()).ToList();
-            if(fillteredStock.Count() == 1)
+            var fillteredStock = userPortfolio.Where(s => s.Symbol.ToLower() == symbol.ToLower()).ToList();
+            if (fillteredStock.Count() == 1)
             {
-                await _portfolioInterface.deletePortifolio(appUser,symbol);
+                await _portfolioInterface.DeletePortfolioAsync(appUser, symbol);
             }
             else
             {
                 return BadRequest(ApiResponse.Error("Stock not in your portfolio"));
             }
+
             return Ok(
                 new
                 {
-                    success =true,
-                    message= "Portfolio deleted succesfully"
+                    success = true,
+                    message = "Portfolio deleted successfully"
                 }
             );
         }

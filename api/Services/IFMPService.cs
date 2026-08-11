@@ -15,9 +15,6 @@ namespace StockReview.Services
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
-        // The legacy /api/v3/* endpoints were retired (Aug 2025); FMP now serves
-        // the current API under /stable/*. Keep short in-memory caches so we do
-        // not hammer the (rate-limited) free tier on every dashboard render.
         private static readonly ConcurrentDictionary<string, (DateTime Expires, object Value)> _cache = new();
         private static readonly TimeSpan QuoteCacheTtl = TimeSpan.FromMinutes(1);
         private static readonly TimeSpan HistoryCacheTtl = TimeSpan.FromMinutes(5);
@@ -29,13 +26,7 @@ namespace StockReview.Services
         }
 
         private string ApiKey =>
-            // .env declares FMP_KEYS (DotNetEnv loads it as an env var); keep
-            // FMPKey as a fallback for other setups.
             _configuration["FMP_KEYS"] ?? _configuration["FMPKey"] ?? string.Empty;
-
-        // Opportunistically drop expired entries so the static cache stays
-        // bounded (symbols can be added/removed at runtime, so keys are never
-        // naturally retired). Called on each cache write.
         private static void PruneExpired()
         {
             var now = DateTime.UtcNow;
@@ -107,8 +98,6 @@ namespace StockReview.Services
             if (_cache.TryGetValue(cacheKey, out var hit) && hit.Expires > DateTime.UtcNow)
                 return (List<FMPHistoryPoint>)hit.Value;
 
-            // Endpoint returns newest-first; the free tier does not honor the
-            // "limit" param, so fetch and slice the tail.
             var all = await GetJsonAsync<FMPHistoryPoint[]>(
                 $"https://financialmodelingprep.com/stable/historical-price-eod/light?symbol={Uri.EscapeDataString(symbol)}&apikey={ApiKey}");
 
@@ -122,11 +111,6 @@ namespace StockReview.Services
 
         public Task<List<FMPStockSearchResult>> SearchStocksAsync(string query, int limit)
         {
-            // FMP's /stable/search and /stable/symbol/available-list are
-            // paid-tier (return [] on the free key), so search runs against
-            // the bundled PopularStocks index. Exact symbols not in the index
-            // are still addable via POST /api/stock/from-live, which validates
-            // against the free quote endpoint.
             var q = query?.Trim().ToUpperInvariant();
             if (string.IsNullOrWhiteSpace(q)) return Task.FromResult(new List<FMPStockSearchResult>());
             if (limit < 1) limit = 1;
@@ -145,9 +129,6 @@ namespace StockReview.Services
                 var score = 0;
                 if (s.symbol.StartsWith(q, StringComparison.Ordinal)) score = 3;
                 else if (nameUpper.StartsWith(q, StringComparison.Ordinal)) score = 2;
-                // Name-contains matches are gated to >= 3 chars so common
-                // substrings like "co" or "in" don't flood the dropdown with
-                // alphabetical ties.
                 else if (q.Length >= 3 && nameUpper.Contains(q, StringComparison.Ordinal)) score = 1;
                 if (score > 0) scored.Add((s, score));
             }

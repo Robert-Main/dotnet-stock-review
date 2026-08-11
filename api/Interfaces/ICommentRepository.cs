@@ -11,8 +11,7 @@ namespace StockReview.Interfaces
     {
         Task<List<CommentDto>> GetAllCommentsAsync();
         Task<List<CommentDto>> GetCommentsByStockIdAsync(int stockId);
-        Task<CommentDto?> GetCommentByIdAsync(int id);   // ✅ fixed
-        // Raw entity (includes AppUserId) so controllers can enforce ownership.
+        Task<CommentDto?> GetCommentByIdAsync(int id);  
         Task<Comment?> GetCommentEntityByIdAsync(int id);
         Task<Comment> AddCommentAsync(CreateCommentDto createCommentDto, string appUserId);
         Task<Comment?> UpdateCommentAsync(int id, UpdateCommentDto updateCommentDto);
